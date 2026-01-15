@@ -15,6 +15,7 @@ defmodule Inexora.Nif do
   end
 
   @type context :: reference()
+  @type conn :: reference()
   @type reason :: atom() | String.t() | {integer(), String.t(), String.t()}
 
   @doc """
@@ -73,4 +74,81 @@ defmodule Inexora.Nif do
   @spec get_client_version(context()) ::
           {:ok, {integer(), integer(), integer(), integer(), integer()}} | {:error, reason()}
   def get_client_version(_context), do: :erlang.nif_error(:not_loaded)
+
+  # ============================================================
+  # Connection Functions
+  # ============================================================
+
+  @doc """
+  Creates a new database connection.
+
+  ## Parameters
+
+    * `context` - ODPI-C context reference
+    * `username` - Database username (binary)
+    * `password` - Database password (binary)
+    * `connect_string` - Oracle connection string (binary), e.g., "localhost:1521/ORCLPDB1"
+
+  ## Examples
+
+      iex> {:ok, ctx} = Inexora.Nif.context_create()
+      iex> {:ok, conn} = Inexora.Nif.conn_create(ctx, "user", "password", "localhost:1521/ORCLPDB1")
+  """
+  @spec conn_create(context(), binary(), binary(), binary()) :: {:ok, conn()} | {:error, reason()}
+  def conn_create(_context, _username, _password, _connect_string),
+    do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Closes a database connection.
+
+  The connection is closed and released. After calling this function,
+  the connection reference should not be used.
+  """
+  @spec conn_close(conn()) :: :ok | {:error, reason()}
+  def conn_close(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Pings the database to verify the connection is alive.
+
+  This performs a round-trip to the database server.
+  """
+  @spec conn_ping(conn()) :: :ok | {:error, reason()}
+  def conn_ping(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Commits the current transaction.
+  """
+  @spec conn_commit(conn()) :: :ok | {:error, reason()}
+  def conn_commit(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Rolls back the current transaction.
+  """
+  @spec conn_rollback(conn()) :: :ok | {:error, reason()}
+  def conn_rollback(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the Oracle server version.
+
+  Returns a tuple of `{release_string, version_info}` where `version_info`
+  is `{version, release, update, port_release, port_update}`.
+  """
+  @spec conn_get_server_version(conn()) ::
+          {:ok, {String.t(), {integer(), integer(), integer(), integer(), integer()}}}
+          | {:error, reason()}
+  def conn_get_server_version(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Checks if the connection is healthy without a round-trip to the server.
+
+  This is a quick local check based on the connection state.
+  """
+  @spec conn_get_is_healthy(conn()) :: {:ok, boolean()} | {:error, reason()}
+  def conn_get_is_healthy(_conn), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Checks if a transaction is currently in progress on the connection.
+  """
+  @spec conn_get_transaction_in_progress(conn()) :: {:ok, boolean()} | {:error, reason()}
+  def conn_get_transaction_in_progress(_conn), do: :erlang.nif_error(:not_loaded)
 end
