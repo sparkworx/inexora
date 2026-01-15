@@ -1,0 +1,1839 @@
+
+ ▐▛███▜▌   Claude Code v2.1.7
+▝▜█████▛▘  Opus 4.5 · Claude Pro
+  ▘▘ ▝▝    ~/projects/sandbox/cc/inexora
+
+❯ What are we trying to accomplish? 
+
+⏺ Based on the CLAUDE.md file, Inexora is an Oracle Database driver and Ecto adapter for Elixir applications. Here's what we're building:
+
+  Core Goal
+
+  Create a way for Elixir developers to connect to Oracle databases (12c+) using the standard Ecto ORM interface.
+
+  Technical Approach
+
+  1. NIF-based driver - Use Erlang NIFs (Native Implemented Functions) to interface with ODPI-C, Oracle's official C library for database connectivity
+  2. Ecto Adapter - Implement the adapter layer so Elixir apps can use Oracle with Ecto just like they would PostgreSQL or SQLite
+
+  Key Inspirations
+
+  - Postgrex - The gold-standard Elixir database driver
+  - Exqlite - A similar NIF-based approach for SQLite that we're modeling after
+
+  Current Status
+
+  The project has just started - nothing is completed yet. The roadmap includes:
+  - Driver initialization and context support
+  - Database connections
+  - SQL statement execution
+  - Result set handling
+  - Data type support (VARCHAR2, NUMBER, DATE/TIMESTAMP, etc.)
+  - Ecto adapter functions
+
+  Why This Approach?
+
+  Rather than implementing Oracle's TNS wire protocol from scratch (complex and hard to maintain), leveraging ODPI-C keeps the driver aligned with what Oracle officially supports while avoiding duplication of effort.
+
+  Is there a specific aspect of this project you'd like to start working on, or would you like me to explore the current codebase structure to understand what's already in place?
+
+❯ Let's start. 
+
+⏺ Let me explore the current state of the codebase to understand what's already in place and what needs to be built first.
+
+⏺ Explore(Explore Inexora codebase structure)
+  ⎿  Done (22 tool uses · 20.5k tokens · 46s)                            
+
+
+⏺ The project is at the very beginning - just basic Mix scaffolding with a trivial "hello world" function. No dependencies, no C/NIF code, no ODPI-C integration, and no Makefile yet.
+
+  Before I design an implementation plan, I have a few questions to clarify the scope:
+                                                                      
+⏺ User answered Claude's questions:
+  ⎿  · What should be our first milestone goal? → Minimal NIF setup
+     · Do you have an Oracle database available for testing? → Not yet
+
+⏺ Understood - we'll focus on getting the minimal NIF setup working first, without needing a live database. Let me design the implementation plan.
+
+⏺ Plan(Design minimal NIF setup plan)
+  ⎿  Done (20 tool uses · 30.7k tokens · 3m 23s)                         
+
+
+⏺ Excellent plan from the agent. Let me write the final implementation plan to the plan file.
+
+⏺ Updated plan
+  ⎿  Wrote 87 lines to                                                   
+     ../../../../.claude/plans/floating-fluttering-russell.md
+      1 # Inexora: Minimal NIF Setup Implementation Plan
+      2 ## Goal
+      3 Set up the minimal NIF infrastructure that can:
+      4 1. Compile ODPI-C via `elixir_make`
+      5 2. Load the NIF into the BEAM
+      6 3. Call `odpi_version()` to verify the binding works (no Oracle c
+        lient required)
+      7 ## Files to Create/Modify
+     … +77 lines (ctrl+o to expand)
+                                                                         
+⏺ User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/floating-fluttering-russell.md · /plan 
+     to edit
+     Inexora: Minimal NIF Setup Implementation Plan
+
+     Goal
+
+     Set up the minimal NIF infrastructure that can:
+     1. Compile ODPI-C via elixir_make
+     2. Load the NIF into the BEAM
+     3. Call odpi_version() to verify the binding works (no Oracle client
+     required)
+
+     Files to Create/Modify
+
+     1. Update mix.exs
+
+     Add dependencies and configure elixir_make compiler:
+     - {:elixir_make, "~> 0.8", runtime: false}
+     - {:db_connection, "~> 2.6"}
+     - {:decimal, "~> 2.0"}
+     - Add compilers: [:elixir_make] ++ Mix.compilers()
+
+     2. Add ODPI-C Git Submodule
+
+     git submodule add https://github.com/oracle/odpi.git c_src/odpi
+
+     3. Create Makefile
+
+     Cross-platform build configuration for the NIF:
+     - Detect platform (macOS/Linux)
+     - Include Erlang NIF headers and ODPI-C headers
+     - Compile c_src/inexora_nif.c + c_src/odpi/embed/dpi.c
+     - Output to priv/inexora_nif.so
+
+     4. Create c_src/inexora_nif.c
+
+     NIF implementation with:
+     - dpiContext resource type with destructor
+     - odpi_version/0 - returns ODPI-C compile-time version
+     - context_create/0 - creates ODPI-C context
+     - context_destroy/1 - destroys context
+     - get_client_version/1 - gets Oracle client version
+
+     5. Create lib/inexora/nif.ex
+
+     Elixir NIF module:
+     - @on_load :load_nif callback
+     - Function stubs that delegate to NIF
+     - Type specs and documentation
+
+     6. Update lib/inexora.ex
+
+     Delegate odpi_version/0 to Inexora.Nif
+
+     7. Update .gitignore
+
+     Add NIF artifact patterns (priv/*.so, c_src/*.o)
+
+     8. Create test/inexora/nif_test.exs
+
+     Tests for NIF functions:
+     - odpi_version/0 should always work
+     - Context tests tagged :oracle_client (excluded by default)
+
+     9. Update test/test_helper.exs
+
+     Exclude :oracle_client tagged tests by default
+
+     Verification Steps
+
+     # 1. Initialize submodule
+     git submodule update --init --recursive
+
+     # 2. Get dependencies
+     mix deps.get
+
+     # 3. Compile (triggers NIF build)
+     mix compile
+
+     # 4. Run tests
+     mix test
+
+     # 5. Manual verification in iex
+     iex -S mix
+     iex> Inexora.Nif.odpi_version()
+     {:ok, {5, 6, 4}}  # or similar version tuple
+
+     The odpi_version/0 call proves the NIF compiled and loaded correctly,
+     without needing Oracle Instant Client installed.
+
+     Key Implementation Notes
+
+     1. ODPI-C embed approach: Use c_src/odpi/embed/dpi.c single-file
+     compilation
+     2. Resource cleanup: dpiContext wrapped in Erlang resource with
+     destructor
+     3. Error handling: ODPI-C errors converted to {:error, {code, 
+     function, message}}
+     4. No Oracle client needed: odpi_version() works without Oracle
+     Instant Client
+
+
+⏺ Let me set up a todo list and start implementing.
+
+⏺ Read(mix.exs)
+  ⎿  Read 29 lines
+
+⏺ Read(lib/inexora.ex)
+  ⎿  Read 19 lines
+
+⏺ Read(.gitignore)
+  ⎿  Read 25 lines
+
+⏺ Read(test/test_helper.exs)
+  ⎿  Read 2 lines
+
+⏺ Update(mix.exs)
+  ⎿  Added 7 lines, removed 5 lines                                      
+       7        version: "0.1.0",
+       8        elixir: "~> 1.19",
+       9        start_permanent: Mix.env() == :prod,
+      10 -      deps: deps()                                             
+      10 +      deps: deps(),                                            
+      11 +      compilers: [:elixir_make] ++ Mix.compilers(),            
+      12 +      make_targets: ["all"],                                   
+      13 +      make_clean: ["clean"]                                    
+      14      ]
+      15    end
+      16  
+      14 -  # Run "mix help compile.app" to learn about applications.    
+      17    def application do
+      18      [
+      19        extra_applications: [:logger]
+      20      ]
+      21    end
+      22  
+      21 -  # Run "mix help deps" to learn about dependencies.           
+      23    defp deps do
+      24      [
+      24 -      # {:dep_from_hexpm, "~> 0.3.0"},                         
+      25 -      # {:dep_from_git, git: "https://github.com/elixir-lang/my
+         -_dep.git", tag: "0.1.0"}                                       
+      25 +      {:elixir_make, "~> 0.8", runtime: false},                
+      26 +      {:db_connection, "~> 2.6"},                              
+      27 +      {:decimal, "~> 2.0"}                                     
+      28      ]
+      29    end
+      30  end
+
+⏺ Bash(mkdir -p /Users/ian/projects/sandbox/cc/inexora/c_src && git -C
+      /Users/ian/projects/sandbox/cc/inexora submodule add
+      https://github.com/oracle/odpi.git c_src/od…)
+  ⎿  Cloning into '/Users/ian/projects/sandbox/cc/inexora/c_src/odpi'...
+
+⏺ Write(Makefile)
+  ⎿  Wrote 58 lines to Makefile                                          
+      1 # Makefile for Inexora NIF
+      2 # Compiles ODPI-C and NIF bindings
+      3 # Erlang paths
+      4 ERTS_INCLUDE_DIR ?= $(shell erl -noshell -eval "io:format(\"~ts/e
+        rts-~ts/include/\", [code:root_dir(), erlang:system_info(version)
+        ]), halt().")
+      5 ERL_INTERFACE_INCLUDE_DIR ?= $(shell erl -noshell -eval "io:forma
+        t(\"~ts\", [code:lib_dir(erl_interface, include)]), halt().")
+      6 ERL_INTERFACE_LIB_DIR ?= $(shell erl -noshell -eval "io:format(\"
+        ~ts\", [code:lib_dir(erl_interface, lib)]), halt().")
+      7 # Platform detection
+      8 UNAME_S := $(shell uname -s)
+     … +48 lines (ctrl+o to expand)
+
+⏺ Write(c_src/inexora_nif.c)
+  ⎿  Wrote 194 lines to c_src/inexora_nif.c                          
+      1 // c_src/inexora_nif.c
+      2 // Inexora NIF - Oracle Database driver for Elixir via ODPI-C
+      3 #include <erl_nif.h>
+      4 #include <string.h>
+      5 #include "dpi.h"
+      6 // Resource type for dpiContext
+      7 static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
+     … +184 lines (ctrl+o to expand)
+  ⎿  Found 10 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Bash(mkdir -p /Users/ian/projects/sandbox/cc/inexora/lib/inexora)
+  ⎿  (No content)
+
+⏺ Write(lib/inexora/nif.ex)
+  ⎿  Wrote 77 lines to lib/inexora/nif.ex                                
+      1 defmodule Inexora.Nif do
+      2   @moduledoc """
+      3   Low-level NIF bindings to ODPI-C.
+      4   This module provides the raw NIF function stubs that interface
+      5   with the ODPI-C library. Higher-level APIs should be built on t
+        op.
+      6   """
+      7   @on_load :load_nif
+     … +67 lines (ctrl+o to expand)
+
+⏺ Update(lib/inexora.ex)
+  ⎿  Added 19 lines, removed 10 lines                                    
+       1  defmodule Inexora do
+       2    @moduledoc """
+       3 -  Documentation for `Inexora`.                                 
+       4 -  """                                                          
+       3 +  Inexora - Oracle Database driver for Elixir.                 
+       4  
+       6 -  @doc """                                                     
+       7 -  Hello world.                                                 
+       5 +  An Oracle database driver and Ecto adapter using ODPI-C      
+       6 +  (Oracle Database Programming Interface for C).               
+       7  
+       9 -  ## Examples                                                  
+       8 +  ## Quick Start                                               
+       9  
+      11 -      iex> Inexora.hello()                                     
+      12 -      :world                                                   
+      10 +  Check if the NIF is loaded and get ODPI-C version:           
+      11  
+      12 +      iex> Inexora.odpi_version()                              
+      13 +      {:ok, {5, 3, 0}}                                         
+      14 +                                                               
+      15 +  ## Requirements                                              
+      16 +                                                               
+      17 +  - Oracle Instant Client must be installed for database operat
+         +ions                                                           
+      18 +  - ODPI-C version info works without Oracle client (compile-ti
+         +me constant)                                                   
+      19    """
+      15 -  def hello do                                                 
+      16 -    :world                                                     
+      17 -  end                                                          
+      20 +                                                               
+      21 +  @doc """                                                     
+      22 +  Returns the ODPI-C library version.                          
+      23 +                                                               
+      24 +  This is a compile-time constant and does not require Oracle I
+         +nstant Client.                                                 
+      25 +  """                                                          
+      26 +  defdelegate odpi_version(), to: Inexora.Nif                  
+      27  end
+
+⏺ Update(.gitignore)
+  ⎿  Added 6 lines                                                       
+      22  # Ignore package tarball (built via "mix hex.build").
+      23  inexora-*.tar
+      24  
+      25 +# NIF artifacts                                                
+      26 +/priv/*.so                                                     
+      27 +/priv/*.dylib                                                  
+      28 +/priv/*.dll                                                    
+      29 +c_src/*.o                                                      
+      30 +                                                               
+
+⏺ Update(test/test_helper.exs)
+  ⎿  Added 7 lines, removed 1 line                                       
+      1 -ExUnit.start()                                                  
+      1 +# Configure ExUnit - exclude oracle_client tests by default     
+      2 +ExUnit.start(exclude: [:oracle_client])                         
+      3 +                                                                
+      4 +# Include oracle_client tests if environment variable is set    
+      5 +if System.get_env("ORACLE_CLIENT_AVAILABLE") do                 
+      6 +  ExUnit.configure(exclude: [])                                 
+      7 +end                                                             
+
+⏺ Bash(mkdir -p /Users/ian/projects/sandbox/cc/inexora/test/inexora)
+  ⎿  (No content)
+
+⏺ Write(test/inexora/nif_test.exs)
+  ⎿  Wrote 50 lines to test/inexora/nif_test.exs                      
+      1 defmodule Inexora.NifTest do
+      2   use ExUnit.Case, async: true
+      3   alias Inexora.Nif
+      4   describe "odpi_version/0" do
+      5     test "returns the ODPI-C library version tuple" do
+      6       assert {:ok, {major, minor, patch}} = Nif.odpi_version()
+      7       assert is_integer(major)
+      8       assert is_integer(minor)
+     … +40 lines (ctrl+o to expand)
+
+⏺ Bash(mix deps.get)
+  ⎿  Resolving Hex dependencies...
+     Resolution completed in 0.03s
+     New:
+     … +9 lines (ctrl+o to expand)
+
+⏺ Bash(mix compile)
+  ⎿  ==> elixir_make               
+     Compiling 8 files (.ex)
+     Generated elixir_make app
+     … +17 lines (ctrl+o to expand)
+
+⏺ Bash(mix test)
+  ⎿  Error: Exit code 2
+         warning: Inexora.hello/0 is undefined or private
+         │
+       6 │     assert Inexora.hello() == :world
+         │                    ~
+         │
+         └─ test/inexora_test.exs:6:20: InexoraTest."test greets the world"/1
+
+
+     ==> elixir_make
+     … +45 lines (ctrl+o to see all)
+
+⏺ Two issues to fix - the old test file and the doctest version. Let me update them.
+
+⏺ Read(test/inexora_test.exs)
+  ⎿  Read 9 lines
+
+⏺ Update(test/inexora_test.exs)
+  ⎿  Removed 4 lines                                                     
+      1  defmodule InexoraTest do
+      2    use ExUnit.Case
+      3    doctest Inexora
+      4 -                                                                
+      5 -  test "greets the world" do                                    
+      6 -    assert Inexora.hello() == :world                            
+      7 -  end                                                           
+      4  end
+
+⏺ Update(lib/inexora.ex)
+  ⎿  Added 1 line, removed 1 line                                        
+      10    Check if the NIF is loaded and get ODPI-C version:
+      11  
+      12        iex> Inexora.odpi_version()
+      13 -      {:ok, {5, 3, 0}}                                         
+      13 +      {:ok, {5, 6, 4}}                                         
+      14  
+      15    ## Requirements
+      16  
+
+⏺ Update(lib/inexora/nif.ex)
+  ⎿  Added 1 line, removed 1 line                                        
+      25    ## Examples
+      26  
+      27        iex> Inexora.Nif.odpi_version()
+      28 -      {:ok, {5, 3, 0}}                                         
+      28 +      {:ok, {5, 6, 4}}                                         
+      29    """
+      30    @spec odpi_version() :: {:ok, {integer(), integer(), integer(
+          )}} | {:error, reason()}
+      31    def odpi_version, do: :erlang.nif_error(:not_loaded)
+
+⏺ Bash(mix test)
+  ⎿  make: Nothing to be done for `all'.
+     Compiling 2 files (.ex)
+     Generated inexora app
+     … +6 lines (ctrl+o to expand)
+
+⏺ All tests pass. Let me verify the NIF works interactively.
+
+⏺ Bash(echo 'Inexora.odpi_version()' | iex -S mix 2>&1 | tail -20)
+  ⎿ Erlang/OTP 28 [erts-16.1.2] [source] [64-bit] [smp:16:16]            
+    [ds:16:16:10]
+     [async-threads:1] [dtrace]
+    … +7 lines (ctrl+o to expand)
+
+⏺ The minimal NIF setup is complete and working. Here's what was implemented:
+
+  Summary
+
+  Files Created/Modified:
+  - mix.exs - Added elixir_make, db_connection, decimal dependencies
+  - c_src/odpi/ - ODPI-C git submodule (v5.6.4)
+  - Makefile - Cross-platform NIF build configuration
+  - c_src/inexora_nif.c - NIF implementation with 4 functions
+  - lib/inexora/nif.ex - Elixir NIF bindings
+  - lib/inexora.ex - Main module with odpi_version/0
+  - .gitignore - NIF artifact patterns
+  - test/inexora/nif_test.exs - NIF tests
+  - test/test_helper.exs - Excludes oracle_client tests by default
+
+  NIF Functions Available:
+  - Inexora.Nif.odpi_version/0 - Returns {:ok, {5, 6, 4}} (works without Oracle client)
+  - Inexora.Nif.context_create/0 - Creates ODPI-C context (requires Oracle Instant Client)
+  - Inexora.Nif.context_destroy/1 - Destroys context
+  - Inexora.Nif.get_client_version/1 - Gets Oracle client version
+
+  Verification:
+  mix test
+  # 1 doctest, 1 test, 0 failures (2 excluded)
+
+  iex> Inexora.odpi_version()
+  {:ok, {5, 6, 4}}
+
+  The NIF compiles, loads, and returns the ODPI-C version correctly. Ready for the next milestone when you want to add database connectivity.
+
+✻ Brewed for 8m 52s
+
+❯ commit this and then implement database connections 
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora status)
+  ⎿  On branch develop                                  
+     Changes to be committed:
+       (use "git restore --staged <file>..." to unstage)
+     … +20 lines (ctrl+o to expand)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora diff --stat)
+  ⎿   .gitignore            |  6 ++++++                       
+      lib/inexora.ex        | 29 +++++++++++++++++++----------
+      mix.exs               | 12 +++++++-----
+     … +3 lines (ctrl+o to expand)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora log --oneline -3)
+  ⎿  6e33890 initial commit 🚀
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora add .gitignore
+      lib/inexora.ex mix.exs test/inexora_test.exs test/test_helper.exs Makefile
+       c_src/inexora_nif.c lib/…)
+  ⎿  (No content)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora commit -m "Add minimal NIF
+      infrastructure with ODPI-C integration…)
+  ⎿ [develop 244d30a] Add minimal NIF infrastructure with ODPI-C         
+    integratio
+    n
+     12 files changed, 424 insertions(+), 20 deletions(-)
+    … +7 lines (ctrl+o to expand)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora status)
+  ⎿  On branch develop                                               
+     Untracked files:
+       (use "git add <file>..." to include in what will be committed)
+     … +4 lines (ctrl+o to expand)
+
+⏺ Committed. Now let me plan the database connection implementation.
+                                                                   
+⏺ Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+⏺ 2 Explore agents finished (ctrl+o to expand)
+   ├─ Explore db_connection patterns · 27 tool uses · 61.9k tokens
+   │  ⎿  Done
+   └─ Explore ODPI-C connection API · 34 tool uses · 38.9k tokens
+      ⎿  Done
+
+⏺ Excellent exploration results. Now let me design the implementation plan.
+
+⏺ Plan(Design connection implementation plan)
+  ⎿  Done (23 tool uses · 61.2k tokens · 2m 45s)                         
+
+
+⏺ Excellent plan. Let me write the final plan to the plan file.
+
+⏺ Updated plan
+  ⎿  /plan to preview                                                    
+       1 -# Inexora: Minimal NIF Setup Implementation Plan               
+       1 +# Inexora: Database Connection Implementation Plan             
+       2  
+       3  ## Goal
+       4 -Set up the minimal NIF infrastructure that can:                
+       5 -1. Compile ODPI-C via `elixir_make`                            
+       6 -2. Load the NIF into the BEAM                                  
+       7 -3. Call `odpi_version()` to verify the binding works (no Oracle
+         - client required)                                              
+       4 +Implement Oracle database connections with DBConnection behavio
+         +ur support for connection pooling, health checks, and transacti
+         +on control.                                                    
+       5  
+       6  ## Files to Create/Modify
+       7  
+      11 -### 1. Update `mix.exs`                                        
+      12 -Add dependencies and configure `elixir_make` compiler:         
+      13 -- `{:elixir_make, "~> 0.8", runtime: false}`                   
+      14 -- `{:db_connection, "~> 2.6"}`                                 
+      15 -- `{:decimal, "~> 2.0"}`                                       
+      16 -- Add `compilers: [:elixir_make] ++ Mix.compilers()`           
+       8 +### 1. Modify `c_src/inexora_nif.c`                            
+       9 +Add new NIF functions for connection management:               
+      10  
+      18 -### 2. Add ODPI-C Git Submodule                                
+      19 -```bash                                                        
+      20 -git submodule add https://github.com/oracle/odpi.git c_src/odpi
+      21 -```                                                            
+      11 +**New Resource Type:**                                         
+      12 +- `CONNECTION_RESOURCE_TYPE` with destructor calling `dpiConn_r
+         +elease()`                                                      
+      13  
+      23 -### 3. Create `Makefile`                                       
+      24 -Cross-platform build configuration for the NIF:                
+      25 -- Detect platform (macOS/Linux)                                
+      26 -- Include Erlang NIF headers and ODPI-C headers                
+      27 -- Compile `c_src/inexora_nif.c` + `c_src/odpi/embed/dpi.c`     
+      28 -- Output to `priv/inexora_nif.so`                              
+      14 +**New NIF Functions (all network I/O marked as dirty):**       
+      15 +- `conn_create/4` - Create connection (context, username, passw
+         +ord, connect_string)                                           
+      16 +- `conn_close/1` - Close connection                            
+      17 +- `conn_ping/1` - Ping to verify connection alive              
+      18 +- `conn_commit/1` - Commit transaction                         
+      19 +- `conn_rollback/1` - Rollback transaction                     
+      20 +- `conn_get_server_version/1` - Get Oracle server version      
+      21 +- `conn_get_is_healthy/1` - Check connection health (no round-t
+         +rip)                                                           
+      22 +- `conn_get_transaction_in_progress/1` - Check transaction stat
+         +us                                                             
+      23  
+      30 -### 4. Create `c_src/inexora_nif.c`                            
+      31 -NIF implementation with:                                       
+      32 -- `dpiContext` resource type with destructor                   
+      33 -- `odpi_version/0` - returns ODPI-C compile-time version       
+      34 -- `context_create/0` - creates ODPI-C context                  
+      35 -- `context_destroy/1` - destroys context                       
+      36 -- `get_client_version/1` - gets Oracle client version          
+      24 +### 2. Modify `lib/inexora/nif.ex`                             
+      25 +Add Elixir stubs for the new NIF functions with type specs.    
+      26  
+      38 -### 5. Create `lib/inexora/nif.ex`                             
+      39 -Elixir NIF module:                                             
+      40 -- `@on_load :load_nif` callback                                
+      41 -- Function stubs that delegate to NIF                          
+      42 -- Type specs and documentation                                 
+      27 +### 3. Create `lib/inexora/error.ex`                           
+      28 +Exception struct for Inexora database errors with:             
+      29 +- `message`, `oracle_code`, `function`, `action` fields        
+      30 +- `from_odpi/1` helper to convert ODPI-C error tuples          
+      31  
+      44 -### 6. Update `lib/inexora.ex`                                 
+      45 -Delegate `odpi_version/0` to `Inexora.Nif`                     
+      32 +### 4. Create `lib/inexora/connection.ex`                      
+      33 +DBConnection behaviour implementation with:                    
+      34 +- State struct: `%{context, conn, transaction_status}`         
+      35 +- `connect/1` - Create context and connection                  
+      36 +- `disconnect/2` - Close connection and destroy context        
+      37 +- `checkout/1` - Verify connection health                      
+      38 +- `ping/1` - Ping connection                                   
+      39 +- `handle_status/2` - Return transaction status                
+      40 +- `handle_begin/2` - Mark transaction started (Oracle implicit)
+      41 +- `handle_commit/2` - Commit via NIF                           
+      42 +- `handle_rollback/2` - Rollback via NIF                       
+      43 +- Placeholder stubs for query callbacks (not implemented yet)  
+      44  
+      47 -### 7. Update `.gitignore`                                     
+      48 -Add NIF artifact patterns (`priv/*.so`, `c_src/*.o`)           
+      45 +### 5. Create `test/inexora/connection_test.exs`               
+      46 +Tests for DBConnection implementation (tagged :oracle_database)
+      47  
+      50 -### 8. Create `test/inexora/nif_test.exs`                      
+      51 -Tests for NIF functions:                                       
+      52 -- `odpi_version/0` should always work                          
+      53 -- Context tests tagged `:oracle_client` (excluded by default)  
+      48 +### 6. Create `test/inexora/nif_connection_test.exs`           
+      49 +Tests for NIF connection functions (tagged :oracle_database)   
+      50  
+      55 -### 9. Update `test/test_helper.exs`                           
+      56 -Exclude `:oracle_client` tagged tests by default               
+      51 +### 7. Update `test/test_helper.exs`                           
+      52 +Add `:oracle_database` tag exclusion for live database tests   
+      53  
+      58 -## Verification Steps                                          
+      54 +## Implementation Order                                        
+      55  
+      60 -```bash                                                        
+      61 -# 1. Initialize submodule                                      
+      62 -git submodule update --init --recursive                        
+      56 +1. **NIF Layer** - Add CONNECTION_RESOURCE_TYPE, conn_create, c
+         +onn_close                                                      
+      57 +2. **Core NIF Functions** - conn_ping, conn_commit, conn_rollba
+         +ck                                                             
+      58 +3. **Status NIF Functions** - conn_get_server_version, conn_get
+         +_is_healthy, conn_get_transaction_in_progress                  
+      59 +4. **Elixir Stubs** - Update lib/inexora/nif.ex                
+      60 +5. **Error Module** - Create lib/inexora/error.ex              
+      61 +6. **DBConnection Module** - Create lib/inexora/connection.ex  
+      62 +7. **Tests** - Create test files                               
+      63  
+      64 -# 2. Get dependencies                                          
+      65 -mix deps.get                                                   
+      64 +## Key Design Decisions                                        
+      65  
+      67 -# 3. Compile (triggers NIF build)                              
+      66 +- **Context per Connection**: Each connection holds its own dpi
+         +Context (simpler, thread-safe)                                 
+      67 +- **Dirty Schedulers**: Network I/O NIFs use `ERL_NIF_DIRTY_JOB
+         +_IO_BOUND`                                                     
+      68 +- **Implicit Transactions**: Oracle auto-starts transactions; h
+         +andle_begin just marks state                                   
+      69 +- **Resource Cleanup**: Both context and connection use Erlang 
+         +resource destructors                                           
+      70 +                                                               
+      71 +## Verification                                                
+      72 +                                                               
+      73 +```bash                                                        
+      74 +# Compile                                                      
+      75  mix compile
+      76  
+      70 -# 4. Run tests                                                 
+      77 +# Run non-database tests                                       
+      78  mix test
+      79  
+      73 -# 5. Manual verification in iex                                
+      80 +# With Oracle database available:                              
+      81 +ORACLE_DATABASE_AVAILABLE=1 mix test                           
+      82 +                                                               
+      83 +# Manual test in iex (requires Oracle):                        
+      84  iex -S mix
+      75 -iex> Inexora.Nif.odpi_version()                                
+      76 -{:ok, {5, 6, 4}}  # or similar version tuple                   
+      85 +{:ok, conn} = DBConnection.start_link(Inexora.Connection,      
+      86 +  username: "user", password: "pass", database: "localhost:1521
+         +/FREEPDB1")                                                    
+      87  ```
+      78 -                                                               
+      79 -The `odpi_version/0` call proves the NIF compiled and loaded co
+         -rrectly, without needing Oracle Instant Client installed.      
+      80 -                                                               
+      81 -## Key Implementation Notes                                    
+      82 -                                                               
+      83 -1. **ODPI-C embed approach**: Use `c_src/odpi/embed/dpi.c` sing
+         -le-file compilation                                            
+      84 -2. **Resource cleanup**: `dpiContext` wrapped in Erlang resourc
+         -e with destructor                                              
+      85 -3. **Error handling**: ODPI-C errors converted to `{:error, {co
+         -de, function, message}}`                                       
+      86 -4. **No Oracle client needed**: `odpi_version()` works without 
+         -Oracle Instant Client                                          
+                                                                         
+⏺ User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/floating-fluttering-russell.md · /plan 
+     to edit
+     Inexora: Database Connection Implementation Plan
+
+     Goal
+
+     Implement Oracle database connections with DBConnection behaviour
+     support for connection pooling, health checks, and transaction
+     control.
+
+     Files to Create/Modify
+
+     1. Modify c_src/inexora_nif.c
+
+     Add new NIF functions for connection management:
+
+     New Resource Type:
+     - CONNECTION_RESOURCE_TYPE with destructor calling dpiConn_release()
+
+     New NIF Functions (all network I/O marked as dirty):
+     - conn_create/4 - Create connection (context, username, password,
+     connect_string)
+     - conn_close/1 - Close connection
+     - conn_ping/1 - Ping to verify connection alive
+     - conn_commit/1 - Commit transaction
+     - conn_rollback/1 - Rollback transaction
+     - conn_get_server_version/1 - Get Oracle server version
+     - conn_get_is_healthy/1 - Check connection health (no round-trip)
+     - conn_get_transaction_in_progress/1 - Check transaction status
+
+     2. Modify lib/inexora/nif.ex
+
+     Add Elixir stubs for the new NIF functions with type specs.
+
+     3. Create lib/inexora/error.ex
+
+     Exception struct for Inexora database errors with:
+     - message, oracle_code, function, action fields
+     - from_odpi/1 helper to convert ODPI-C error tuples
+
+     4. Create lib/inexora/connection.ex
+
+     DBConnection behaviour implementation with:
+     - State struct: %{context, conn, transaction_status}
+     - connect/1 - Create context and connection
+     - disconnect/2 - Close connection and destroy context
+     - checkout/1 - Verify connection health
+     - ping/1 - Ping connection
+     - handle_status/2 - Return transaction status
+     - handle_begin/2 - Mark transaction started (Oracle implicit)
+     - handle_commit/2 - Commit via NIF
+     - handle_rollback/2 - Rollback via NIF
+     - Placeholder stubs for query callbacks (not implemented yet)
+
+     5. Create test/inexora/connection_test.exs
+
+     Tests for DBConnection implementation (tagged :oracle_database)
+
+     6. Create test/inexora/nif_connection_test.exs
+
+     Tests for NIF connection functions (tagged :oracle_database)
+
+     7. Update test/test_helper.exs
+
+     Add :oracle_database tag exclusion for live database tests
+
+     Implementation Order
+
+     1. NIF Layer - Add CONNECTION_RESOURCE_TYPE, conn_create, conn_close
+     2. Core NIF Functions - conn_ping, conn_commit, conn_rollback
+     3. Status NIF Functions - conn_get_server_version,
+     conn_get_is_healthy, conn_get_transaction_in_progress
+     4. Elixir Stubs - Update lib/inexora/nif.ex
+     5. Error Module - Create lib/inexora/error.ex
+     6. DBConnection Module - Create lib/inexora/connection.ex
+     7. Tests - Create test files
+
+     Key Design Decisions
+
+     - Context per Connection: Each connection holds its own dpiContext
+     (simpler, thread-safe)
+     - Dirty Schedulers: Network I/O NIFs use ERL_NIF_DIRTY_JOB_IO_BOUND
+     - Implicit Transactions: Oracle auto-starts transactions; handle_begin
+      just marks state
+     - Resource Cleanup: Both context and connection use Erlang resource
+     destructors
+
+     Verification
+
+     # Compile
+     mix compile
+
+     # Run non-database tests
+     mix test
+
+     # With Oracle database available:
+     ORACLE_DATABASE_AVAILABLE=1 mix test
+
+     # Manual test in iex (requires Oracle):
+     iex -S mix
+     {:ok, conn} = DBConnection.start_link(Inexora.Connection,
+       username: "user", password: "pass", database:
+     "localhost:1521/FREEPDB1")
+
+⏺ Read(c_src/inexora_nif.c)
+  ⎿  Read 194 lines
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 2 lines, removed 1 line                                       
+       5  #include <string.h>
+       6  #include "dpi.h"
+       7  
+       8 -// Resource type for dpiContext                                
+       8 +// Resource types                                              
+       9  static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
+      10 +static ErlNifResourceType *CONNECTION_RESOURCE_TYPE;           
+      11  
+      12  // Atoms (initialized in on_load)
+      13  static ERL_NIF_TERM ATOM_OK;
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 2 lines                                                       
+      13  static ERL_NIF_TERM ATOM_OK;
+      14  static ERL_NIF_TERM ATOM_ERROR;
+      15  static ERL_NIF_TERM ATOM_NIL;
+      16 +static ERL_NIF_TERM ATOM_TRUE;                                 
+      17 +static ERL_NIF_TERM ATOM_FALSE;                                
+      18  
+      19  // Helper: make {:ok, value} tuple
+      20  static ERL_NIF_TERM make_ok_tuple(ErlNifEnv *env, ERL_NIF_TERM 
+          value) {
+  ⎿  Found 10 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 10 lines                                                      
+      47      }
+      48  }
+      49  
+      50 +// Connection destructor (called when Erlang garbage collects t
+         +he resource)                                                   
+      51 +static void connection_destructor(ErlNifEnv *env, void *obj) { 
+      52 +    (void)env;                                                 
+      53 +    dpiConn **conn_ptr = (dpiConn **)obj;                      
+      54 +    if (*conn_ptr != NULL) {                                   
+      55 +        dpiConn_release(*conn_ptr);                            
+      56 +        *conn_ptr = NULL;                                      
+      57 +    }                                                          
+      58 +}                                                              
+      59 +                                                               
+      60  // ============================================================
+      61  // NIF Functions
+      62  // ============================================================
+  ⎿  Found 10 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Now let me add all the connection NIF functions. I'll add them after the existing nif_get_client_version function.
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 248 lines                                                     
+      156  }
+      157  
+      158  // ===========================================================
+           =
+      159 +// Connection NIF Functions                                   
+      160 +// ===========================================================
+          +=                                                             
+      161 +                                                              
+      162 +// Create database connection                                 
+      163 +// conn_create(context, username, password, connect_string) ->
+          + {:ok, conn} | {:error, reason}                               
+      164 +static ERL_NIF_TERM nif_conn_create(ErlNifEnv *env, int argc, 
+          +const ERL_NIF_TERM argv[]) {                                  
+      165 +    if (argc != 4) {                                          
+      166 +        return enif_make_badarg(env);                         
+      167 +    }                                                         
+      168 +                                                              
+      169 +    // Get context resource                                   
+      170 +    dpiContext **ctx_res;                                     
+      171 +    if (!enif_get_resource(env, argv[0], CONTEXT_RESOURCE_TYPE
+          +, (void **)&ctx_res)) {                                       
+      172 +        return make_error_tuple(env, "invalid_context");      
+      173 +    }                                                         
+      174 +    if (*ctx_res == NULL) {                                   
+      175 +        return make_error_tuple(env, "context_destroyed");    
+      176 +    }                                                         
+      177 +                                                              
+      178 +    // Get username                                           
+      179 +    ErlNifBinary username_bin;                                
+      180 +    if (!enif_inspect_binary(env, argv[1], &username_bin)) {  
+      181 +        return make_error_tuple(env, "invalid_username");     
+      182 +    }                                                         
+      183 +                                                              
+      184 +    // Get password                                           
+      185 +    ErlNifBinary password_bin;                                
+      186 +    if (!enif_inspect_binary(env, argv[2], &password_bin)) {  
+      187 +        return make_error_tuple(env, "invalid_password");     
+      188 +    }                                                         
+      189 +                                                              
+      190 +    // Get connect string                                     
+      191 +    ErlNifBinary connect_string_bin;                          
+      192 +    if (!enif_inspect_binary(env, argv[3], &connect_string_bin
+          +)) {                                                          
+      193 +        return make_error_tuple(env, "invalid_connect_string")
+          +;                                                             
+      194 +    }                                                         
+      195 +                                                              
+      196 +    // Create connection                                      
+      197 +    dpiConn *conn = NULL;                                     
+      198 +    if (dpiConn_create(*ctx_res,                              
+      199 +            (const char *)username_bin.data, username_bin.size
+          +,                                                             
+      200 +            (const char *)password_bin.data, password_bin.size
+          +,                                                             
+      201 +            (const char *)connect_string_bin.data, connect_str
+          +ing_bin.size,                                                 
+      202 +            NULL, NULL, &conn) < 0) {                         
+      203 +        dpiErrorInfo errorInfo;                               
+      204 +        dpiContext_getError(*ctx_res, &errorInfo);            
+      205 +        return make_dpi_error(env, &errorInfo);               
+      206 +    }                                                         
+      207 +                                                              
+      208 +    // Wrap connection in Erlang resource                     
+      209 +    dpiConn **conn_res = enif_alloc_resource(CONNECTION_RESOUR
+          +CE_TYPE, sizeof(dpiConn *));                                  
+      210 +    *conn_res = conn;                                         
+      211 +                                                              
+      212 +    ERL_NIF_TERM result = enif_make_resource(env, conn_res);  
+      213 +    enif_release_resource(conn_res);                          
+      214 +                                                              
+      215 +    return make_ok_tuple(env, result);                        
+      216 +}                                                             
+      217 +                                                              
+      218 +// Close database connection                                  
+      219 +// conn_close(conn) -> :ok | {:error, reason}                 
+      220 +static ERL_NIF_TERM nif_conn_close(ErlNifEnv *env, int argc, c
+          +onst ERL_NIF_TERM argv[]) {                                   
+      221 +    if (argc != 1) {                                          
+      222 +        return enif_make_badarg(env);                         
+      223 +    }                                                         
+      224 +                                                              
+      225 +    dpiConn **conn_res;                                       
+      226 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      227 +        return make_error_tuple(env, "invalid_connection");   
+      228 +    }                                                         
+      229 +                                                              
+      230 +    if (*conn_res != NULL) {                                  
+      231 +        // Close with default mode                            
+      232 +        dpiConn_close(*conn_res, DPI_MODE_CONN_CLOSE_DEFAULT, 
+          +NULL, 0);                                                     
+      233 +        dpiConn_release(*conn_res);                           
+      234 +        *conn_res = NULL;                                     
+      235 +    }                                                         
+      236 +                                                              
+      237 +    return ATOM_OK;                                           
+      238 +}                                                             
+      239 +                                                              
+      240 +// Ping database connection                                   
+      241 +// conn_ping(conn) -> :ok | {:error, reason}                  
+      242 +static ERL_NIF_TERM nif_conn_ping(ErlNifEnv *env, int argc, co
+          +nst ERL_NIF_TERM argv[]) {                                    
+      243 +    if (argc != 1) {                                          
+      244 +        return enif_make_badarg(env);                         
+      245 +    }                                                         
+      246 +                                                              
+      247 +    dpiConn **conn_res;                                       
+      248 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      249 +        return make_error_tuple(env, "invalid_connection");   
+      250 +    }                                                         
+      251 +                                                              
+      252 +    if (*conn_res == NULL) {                                  
+      253 +        return make_error_tuple(env, "connection_closed");    
+      254 +    }                                                         
+      255 +                                                              
+      256 +    if (dpiConn_ping(*conn_res) < 0) {                        
+      257 +        // Get error from the connection's context            
+      258 +        dpiErrorInfo errorInfo;                               
+      259 +        dpiConn_getError(*conn_res, &errorInfo);              
+      260 +        return make_dpi_error(env, &errorInfo);               
+      261 +    }                                                         
+      262 +                                                              
+      263 +    return ATOM_OK;                                           
+      264 +}                                                             
+      265 +                                                              
+      266 +// Commit transaction                                         
+      267 +// conn_commit(conn) -> :ok | {:error, reason}                
+      268 +static ERL_NIF_TERM nif_conn_commit(ErlNifEnv *env, int argc, 
+          +const ERL_NIF_TERM argv[]) {                                  
+      269 +    if (argc != 1) {                                          
+      270 +        return enif_make_badarg(env);                         
+      271 +    }                                                         
+      272 +                                                              
+      273 +    dpiConn **conn_res;                                       
+      274 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      275 +        return make_error_tuple(env, "invalid_connection");   
+      276 +    }                                                         
+      277 +                                                              
+      278 +    if (*conn_res == NULL) {                                  
+      279 +        return make_error_tuple(env, "connection_closed");    
+      280 +    }                                                         
+      281 +                                                              
+      282 +    if (dpiConn_commit(*conn_res) < 0) {                      
+      283 +        dpiErrorInfo errorInfo;                               
+      284 +        dpiConn_getError(*conn_res, &errorInfo);              
+      285 +        return make_dpi_error(env, &errorInfo);               
+      286 +    }                                                         
+      287 +                                                              
+      288 +    return ATOM_OK;                                           
+      289 +}                                                             
+      290 +                                                              
+      291 +// Rollback transaction                                       
+      292 +// conn_rollback(conn) -> :ok | {:error, reason}              
+      293 +static ERL_NIF_TERM nif_conn_rollback(ErlNifEnv *env, int argc
+          +, const ERL_NIF_TERM argv[]) {                                
+      294 +    if (argc != 1) {                                          
+      295 +        return enif_make_badarg(env);                         
+      296 +    }                                                         
+      297 +                                                              
+      298 +    dpiConn **conn_res;                                       
+      299 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      300 +        return make_error_tuple(env, "invalid_connection");   
+      301 +    }                                                         
+      302 +                                                              
+      303 +    if (*conn_res == NULL) {                                  
+      304 +        return make_error_tuple(env, "connection_closed");    
+      305 +    }                                                         
+      306 +                                                              
+      307 +    if (dpiConn_rollback(*conn_res) < 0) {                    
+      308 +        dpiErrorInfo errorInfo;                               
+      309 +        dpiConn_getError(*conn_res, &errorInfo);              
+      310 +        return make_dpi_error(env, &errorInfo);               
+      311 +    }                                                         
+      312 +                                                              
+      313 +    return ATOM_OK;                                           
+      314 +}                                                             
+      315 +                                                              
+      316 +// Get server version                                         
+      317 +// conn_get_server_version(conn) -> {:ok, {release_string, {ve
+          +r, rel, update, port_rel, port_update}}} | {:error, reason}   
+      318 +static ERL_NIF_TERM nif_conn_get_server_version(ErlNifEnv *env
+          +, int argc, const ERL_NIF_TERM argv[]) {                      
+      319 +    if (argc != 1) {                                          
+      320 +        return enif_make_badarg(env);                         
+      321 +    }                                                         
+      322 +                                                              
+      323 +    dpiConn **conn_res;                                       
+      324 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      325 +        return make_error_tuple(env, "invalid_connection");   
+      326 +    }                                                         
+      327 +                                                              
+      328 +    if (*conn_res == NULL) {                                  
+      329 +        return make_error_tuple(env, "connection_closed");    
+      330 +    }                                                         
+      331 +                                                              
+      332 +    const char *releaseString;                                
+      333 +    uint32_t releaseStringLength;                             
+      334 +    dpiVersionInfo versionInfo;                               
+      335 +                                                              
+      336 +    if (dpiConn_getServerVersion(*conn_res, &releaseString, &r
+          +eleaseStringLength, &versionInfo) < 0) {                      
+      337 +        dpiErrorInfo errorInfo;                               
+      338 +        dpiConn_getError(*conn_res, &errorInfo);              
+      339 +        return make_dpi_error(env, &errorInfo);               
+      340 +    }                                                         
+      341 +                                                              
+      342 +    ERL_NIF_TERM release_str = enif_make_string_len(env, relea
+          +seString, releaseStringLength, ERL_NIF_LATIN1);               
+      343 +    ERL_NIF_TERM version_tuple = enif_make_tuple5(env,        
+      344 +        enif_make_int(env, versionInfo.versionNum),           
+      345 +        enif_make_int(env, versionInfo.releaseNum),           
+      346 +        enif_make_int(env, versionInfo.updateNum),            
+      347 +        enif_make_int(env, versionInfo.portReleaseNum),       
+      348 +        enif_make_int(env, versionInfo.portUpdateNum)         
+      349 +    );                                                        
+      350 +                                                              
+      351 +    return make_ok_tuple(env, enif_make_tuple2(env, release_st
+          +r, version_tuple));                                           
+      352 +}                                                             
+      353 +                                                              
+      354 +// Check if connection is healthy (no round-trip)             
+      355 +// conn_get_is_healthy(conn) -> {:ok, boolean()} | {:error, re
+          +ason}                                                         
+      356 +static ERL_NIF_TERM nif_conn_get_is_healthy(ErlNifEnv *env, in
+          +t argc, const ERL_NIF_TERM argv[]) {                          
+      357 +    if (argc != 1) {                                          
+      358 +        return enif_make_badarg(env);                         
+      359 +    }                                                         
+      360 +                                                              
+      361 +    dpiConn **conn_res;                                       
+      362 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      363 +        return make_error_tuple(env, "invalid_connection");   
+      364 +    }                                                         
+      365 +                                                              
+      366 +    if (*conn_res == NULL) {                                  
+      367 +        return make_error_tuple(env, "connection_closed");    
+      368 +    }                                                         
+      369 +                                                              
+      370 +    int isHealthy;                                            
+      371 +    if (dpiConn_getIsHealthy(*conn_res, &isHealthy) < 0) {    
+      372 +        dpiErrorInfo errorInfo;                               
+      373 +        dpiConn_getError(*conn_res, &errorInfo);              
+      374 +        return make_dpi_error(env, &errorInfo);               
+      375 +    }                                                         
+      376 +                                                              
+      377 +    return make_ok_tuple(env, isHealthy ? ATOM_TRUE : ATOM_FAL
+          +SE);                                                          
+      378 +}                                                             
+      379 +                                                              
+      380 +// Check if transaction is in progress                        
+      381 +// conn_get_transaction_in_progress(conn) -> {:ok, boolean()} 
+          +| {:error, reason}                                            
+      382 +static ERL_NIF_TERM nif_conn_get_transaction_in_progress(ErlNi
+          +fEnv *env, int argc, const ERL_NIF_TERM argv[]) {             
+      383 +    if (argc != 1) {                                          
+      384 +        return enif_make_badarg(env);                         
+      385 +    }                                                         
+      386 +                                                              
+      387 +    dpiConn **conn_res;                                       
+      388 +    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+          +YPE, (void **)&conn_res)) {                                   
+      389 +        return make_error_tuple(env, "invalid_connection");   
+      390 +    }                                                         
+      391 +                                                              
+      392 +    if (*conn_res == NULL) {                                  
+      393 +        return make_error_tuple(env, "connection_closed");    
+      394 +    }                                                         
+      395 +                                                              
+      396 +    int inProgress;                                           
+      397 +    if (dpiConn_getTransactionInProgress(*conn_res, &inProgres
+          +s) < 0) {                                                     
+      398 +        dpiErrorInfo errorInfo;                               
+      399 +        dpiConn_getError(*conn_res, &errorInfo);              
+      400 +        return make_dpi_error(env, &errorInfo);               
+      401 +    }                                                         
+      402 +                                                              
+      403 +    return make_ok_tuple(env, inProgress ? ATOM_TRUE : ATOM_FA
+          +LSE);                                                         
+      404 +}                                                             
+      405 +                                                              
+      406 +// ===========================================================
+          +=                                                             
+      407  // NIF Registration
+      408  // ===========================================================
+           =
+      409  
+  ⎿  Found 4 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Now let me update the nif_funcs array.
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 11 lines, removed 1 line                                      
+      408  // ===========================================================
+           =
+      409  
+      410  static ErlNifFunc nif_funcs[] = {
+      411 +    // Context functions                                      
+      412      {"odpi_version", 0, nif_odpi_version, 0},
+      413      {"context_create", 0, nif_context_create, 0},
+      414      {"context_destroy", 1, nif_context_destroy, 0},
+      414 -    {"get_client_version", 1, nif_get_client_version, 0}      
+      415 +    {"get_client_version", 1, nif_get_client_version, 0},     
+      416 +    // Connection functions (network I/O marked as dirty)     
+      417 +    {"conn_create", 4, nif_conn_create, ERL_NIF_DIRTY_JOB_IO_B
+          +OUND},                                                        
+      418 +    {"conn_close", 1, nif_conn_close, ERL_NIF_DIRTY_JOB_IO_BOU
+          +ND},                                                          
+      419 +    {"conn_ping", 1, nif_conn_ping, ERL_NIF_DIRTY_JOB_IO_BOUND
+          +},                                                            
+      420 +    {"conn_commit", 1, nif_conn_commit, ERL_NIF_DIRTY_JOB_IO_B
+          +OUND},                                                        
+      421 +    {"conn_rollback", 1, nif_conn_rollback, ERL_NIF_DIRTY_JOB_
+          +IO_BOUND},                                                    
+      422 +    {"conn_get_server_version", 1, nif_conn_get_server_version
+          +, 0},                                                         
+      423 +    {"conn_get_is_healthy", 1, nif_conn_get_is_healthy, 0},   
+      424 +    {"conn_get_transaction_in_progress", 1, nif_conn_get_trans
+          +action_in_progress, 0}                                        
+      425  };
+      426  
+      427  // on_load callback - initialize resources and atoms
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 15 lines                                                      
+      433      ATOM_OK = enif_make_atom(env, "ok");
+      434      ATOM_ERROR = enif_make_atom(env, "error");
+      435      ATOM_NIL = enif_make_atom(env, "nil");
+      436 +    ATOM_TRUE = enif_make_atom(env, "true");                  
+      437 +    ATOM_FALSE = enif_make_atom(env, "false");                
+      438  
+      439      // Register resource types
+      440      CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
+     ...
+      450          return -1;
+      451      }
+      452  
+      453 +    CONNECTION_RESOURCE_TYPE = enif_open_resource_type(       
+      454 +        env,                                                  
+      455 +        NULL,                                                 
+      456 +        "inexora_connection",                                 
+      457 +        connection_destructor,                                
+      458 +        ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER,              
+      459 +        NULL                                                  
+      460 +    );                                                        
+      461 +                                                              
+      462 +    if (CONNECTION_RESOURCE_TYPE == NULL) {                   
+      463 +        return -1;                                            
+      464 +    }                                                         
+      465 +                                                              
+      466      return 0;
+      467  }
+      468  
+
+⏺ Read(lib/inexora/nif.ex)
+  ⎿  Read 77 lines
+
+⏺ Update(lib/inexora/nif.ex)
+  ⎿  Added 1 line                                                        
+      15    end
+      16  
+      17    @type context :: reference()
+      18 +  @type conn :: reference()                                    
+      19    @type reason :: atom() | String.t() | {integer(), String.t(),
+           String.t()}
+      20  
+      21    @doc """
+
+⏺ Update(lib/inexora/nif.ex)
+  ⎿  Added 77 lines                                                      
+       74    @spec get_client_version(context()) ::
+       75            {:ok, {integer(), integer(), integer(), integer(), i
+           nteger()}} | {:error, reason()}
+       76    def get_client_version(_context), do: :erlang.nif_error(:not
+           _loaded)
+       77 +                                                              
+       78 +  # ==========================================================
+          +==                                                            
+       79 +  # Connection Functions                                      
+       80 +  # ==========================================================
+          +==                                                            
+       81 +                                                              
+       82 +  @doc """                                                    
+       83 +  Creates a new database connection.                          
+       84 +                                                              
+       85 +  ## Parameters                                               
+       86 +                                                              
+       87 +    * `context` - ODPI-C context reference                    
+       88 +    * `username` - Database username (binary)                 
+       89 +    * `password` - Database password (binary)                 
+       90 +    * `connect_string` - Oracle connection string (binary), e.
+          +g., "localhost:1521/ORCLPDB1"                                 
+       91 +                                                              
+       92 +  ## Examples                                                 
+       93 +                                                              
+       94 +      iex> {:ok, ctx} = Inexora.Nif.context_create()          
+       95 +      iex> {:ok, conn} = Inexora.Nif.conn_create(ctx, "user", 
+          +"password", "localhost:1521/ORCLPDB1")                        
+       96 +  """                                                         
+       97 +  @spec conn_create(context(), binary(), binary(), binary()) :
+          +: {:ok, conn()} | {:error, reason()}                          
+       98 +  def conn_create(_context, _username, _password, _connect_str
+          +ing),                                                         
+       99 +    do: :erlang.nif_error(:not_loaded)                        
+      100 +                                                              
+      101 +  @doc """                                                    
+      102 +  Closes a database connection.                               
+      103 +                                                              
+      104 +  The connection is closed and released. After calling this fu
+          +nction,                                                       
+      105 +  the connection reference should not be used.                
+      106 +  """                                                         
+      107 +  @spec conn_close(conn()) :: :ok | {:error, reason()}        
+      108 +  def conn_close(_conn), do: :erlang.nif_error(:not_loaded)   
+      109 +                                                              
+      110 +  @doc """                                                    
+      111 +  Pings the database to verify the connection is alive.       
+      112 +                                                              
+      113 +  This performs a round-trip to the database server.          
+      114 +  """                                                         
+      115 +  @spec conn_ping(conn()) :: :ok | {:error, reason()}         
+      116 +  def conn_ping(_conn), do: :erlang.nif_error(:not_loaded)    
+      117 +                                                              
+      118 +  @doc """                                                    
+      119 +  Commits the current transaction.                            
+      120 +  """                                                         
+      121 +  @spec conn_commit(conn()) :: :ok | {:error, reason()}       
+      122 +  def conn_commit(_conn), do: :erlang.nif_error(:not_loaded)  
+      123 +                                                              
+      124 +  @doc """                                                    
+      125 +  Rolls back the current transaction.                         
+      126 +  """                                                         
+      127 +  @spec conn_rollback(conn()) :: :ok | {:error, reason()}     
+      128 +  def conn_rollback(_conn), do: :erlang.nif_error(:not_loaded)
+      129 +                                                              
+      130 +  @doc """                                                    
+      131 +  Gets the Oracle server version.                             
+      132 +                                                              
+      133 +  Returns a tuple of `{release_string, version_info}` where `v
+          +ersion_info`                                                  
+      134 +  is `{version, release, update, port_release, port_update}`. 
+      135 +  """                                                         
+      136 +  @spec conn_get_server_version(conn()) ::                    
+      137 +          {:ok, {String.t(), {integer(), integer(), integer(),
+          + integer(), integer()}}}                                      
+      138 +          | {:error, reason()}                                
+      139 +  def conn_get_server_version(_conn), do: :erlang.nif_error(:n
+          +ot_loaded)                                                    
+      140 +                                                              
+      141 +  @doc """                                                    
+      142 +  Checks if the connection is healthy without a round-trip to 
+          +the server.                                                   
+      143 +                                                              
+      144 +  This is a quick local check based on the connection state.  
+      145 +  """                                                         
+      146 +  @spec conn_get_is_healthy(conn()) :: {:ok, boolean()} | {:er
+          +ror, reason()}                                                
+      147 +  def conn_get_is_healthy(_conn), do: :erlang.nif_error(:not_l
+          +oaded)                                                        
+      148 +                                                              
+      149 +  @doc """                                                    
+      150 +  Checks if a transaction is currently in progress on the conn
+          +ection.                                                       
+      151 +  """                                                         
+      152 +  @spec conn_get_transaction_in_progress(conn()) :: {:ok, bool
+          +ean()} | {:error, reason()}                                   
+      153 +  def conn_get_transaction_in_progress(_conn), do: :erlang.nif
+          +_error(:not_loaded)                                           
+      154  end
+
+⏺ Write(lib/inexora/error.ex)
+  ⎿  Wrote 57 lines to lib/inexora/error.ex                          
+      1 defmodule Inexora.Error do
+      2   @moduledoc """
+      3   Exception struct for Inexora database errors.
+      4   This module provides a consistent error type for all errors
+      5   originating from ODPI-C and Oracle database operations.
+      6   """
+      7   defexception [:message, :oracle_code, :function, :action]
+     … +47 lines (ctrl+o to expand)
+
+⏺ Write(lib/inexora/connection.ex)
+  ⎿  Wrote 193 lines to lib/inexora/connection.ex                        
+      1 defmodule Inexora.Connection do
+      2   @moduledoc """
+      3   DBConnection implementation for Oracle database connections.
+      4   This module handles connection lifecycle, transaction managemen
+        t,
+      5   and health checks for Oracle database connections.
+      6   ## Options
+      7   Connection options:
+     … +183 lines (ctrl+o to expand)
+
+⏺ Read(test/test_helper.exs)
+  ⎿  Read 8 lines
+
+⏺ Update(test/test_helper.exs)
+  ⎿  Added 8 lines, removed 3 lines                                      
+       1 -# Configure ExUnit - exclude oracle_client tests by default    
+       2 -ExUnit.start(exclude: [:oracle_client])                        
+       1 +# Configure ExUnit - exclude tests requiring Oracle by default 
+       2 +ExUnit.start(exclude: [:oracle_client, :oracle_database])      
+       3  
+       4 -# Include oracle_client tests if environment variable is set   
+       4 +# Include oracle_client tests if Oracle client libraries are av
+         +ailable                                                        
+       5  if System.get_env("ORACLE_CLIENT_AVAILABLE") do
+       6 +  ExUnit.configure(exclude: [:oracle_database])                
+       7 +end                                                            
+       8 +                                                               
+       9 +# Include oracle_database tests if a live database is available
+      10 +if System.get_env("ORACLE_DATABASE_AVAILABLE") do              
+      11    ExUnit.configure(exclude: [])
+      12  end
+
+⏺ Write(test/inexora/nif_connection_test.exs)
+  ⎿  Wrote 110 lines to test/inexora/nif_connection_test.exs   
+      1 defmodule Inexora.NifConnectionTest do
+      2   use ExUnit.Case, async: true
+      3   alias Inexora.Nif
+      4   describe "conn_create/4" do
+      5     @tag :oracle_database
+      6     test "creates connection with valid credentials" do
+      7       {:ok, ctx} = Nif.context_create()
+     … +100 lines (ctrl+o to expand)
+
+⏺ Write(test/inexora/connection_test.exs)
+  ⎿  Wrote 174 lines to test/inexora/connection_test.exs
+      1 defmodule Inexora.ConnectionTest do
+      2   use ExUnit.Case, async: false
+      3   alias Inexora.Connection
+      4   alias Inexora.Error
+      5   describe "connect/1" do
+      6     @tag :oracle_database
+      7     test "connects with valid credentials" do
+      8       opts = [
+     … +164 lines (ctrl+o to expand)
+
+⏺ Bash(mix compile 2>&1)
+  ⎿  Error: Exit code 1
+     cc -O2 -Wall -Wextra -Wno-unused-parameter 
+     -I/usr/local/Cellar/erlang/28.2/lib/erlang/erts-16.1.2/include 
+     -Ic_src/odpi/include -o priv/inexora_nif.so c_src/inexora_nif.c 
+     c_src/odpi/embed/dpi.c -dynamiclib -undefined dynamic_lookup
+     c_src/inexora_nif.c:259:9: error: call to undeclared function 
+     'dpiConn_getError'; ISO C99 and later do not support implicit function 
+     declarations [-Wimplicit-function-declaration]
+       259 |         dpiConn_getError(*conn_res, &errorInfo);
+           |         ^
+     c_src/inexora_nif.c:284:9: error: call to undeclared function 
+     'dpiConn_getError'; ISO C99 and later do not support implicit function 
+     declarations [-Wimplicit-function-declaration]
+       284 |         dpiConn_getError(*conn_res, &errorInfo);
+           |         ^
+     c_src/inexora_nif.c:309:9: error: call to undeclared function 
+     'dpiConn_getError'; ISO C99 and later do not support implicit function 
+     declarations [-Wimplicit-function-declaration]
+       309 |         dpiConn_getError(*conn_res, &errorInfo);
+     … +16 lines (ctrl+o to see all)
+
+⏺ I need to fix the NIF - dpiConn_getError doesn't exist in ODPI-C. We need to use dpiContext_getError instead, which means we need to store the context with each connection. Let me update the C code to use a struct that holds both.
+
+⏺ Read(c_src/inexora_nif.c)
+  ⎿  Read 480 lines
+
+⏺ I need to create a struct that holds both the context and connection, so we can use dpiContext_getError for error retrieval. Let me update the NIF.
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 6 lines                                                       
+       9  static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
+      10  static ErlNifResourceType *CONNECTION_RESOURCE_TYPE;
+      11  
+      12 +// Connection resource struct - holds both context and connecti
+         +on                                                             
+      13 +typedef struct {                                               
+      14 +    dpiContext *context;                                       
+      15 +    dpiConn *conn;                                             
+      16 +} InexoraConnection;                                           
+      17 +                                                               
+      18  // Atoms (initialized in on_load)
+      19  static ERL_NIF_TERM ATOM_OK;
+      20  static ERL_NIF_TERM ATOM_ERROR;
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 5 lines, removed 4 lines                                      
+      56  // Connection destructor (called when Erlang garbage collects t
+          he resource)
+      57  static void connection_destructor(ErlNifEnv *env, void *obj) {
+      58      (void)env;
+      59 -    dpiConn **conn_ptr = (dpiConn **)obj;                      
+      60 -    if (*conn_ptr != NULL) {                                   
+      61 -        dpiConn_release(*conn_ptr);                            
+      62 -        *conn_ptr = NULL;                                      
+      59 +    InexoraConnection *conn_res = (InexoraConnection *)obj;    
+      60 +    if (conn_res->conn != NULL) {                              
+      61 +        dpiConn_release(conn_res->conn);                       
+      62 +        conn_res->conn = NULL;                                 
+      63      }
+      64 +    // Note: We don't destroy the context here as it's managed 
+         +separately                                                     
+      65  }
+      66  
+      67  // ============================================================
+  ⎿  Found 10 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Now let me update the conn_create function to use the struct.
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 3 lines                                      
+      212          return make_dpi_error(env, &errorInfo);
+      213      }
+      214  
+      215 -    // Wrap connection in Erlang resource                     
+      216 -    dpiConn **conn_res = enif_alloc_resource(CONNECTION_RESOUR
+          -CE_TYPE, sizeof(dpiConn *));                                  
+      217 -    *conn_res = conn;                                         
+      215 +    // Wrap connection in Erlang resource (includes context re
+          +ference for error retrieval)                                  
+      216 +    InexoraConnection *conn_res = enif_alloc_resource(CONNECTI
+          +ON_RESOURCE_TYPE, sizeof(InexoraConnection));                 
+      217 +    conn_res->context = *ctx_res;                             
+      218 +    conn_res->conn = conn;                                    
+      219  
+      220      ERL_NIF_TERM result = enif_make_resource(env, conn_res);
+      221      enif_release_resource(conn_res);
+  ⎿  Found 2 new diagnostic issues in 1 file (ctrl+o to expand)
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 5 lines, removed 5 lines                                      
+      230          return enif_make_badarg(env);
+      231      }
+      232  
+      233 -    dpiConn **conn_res;                                       
+      233 +    InexoraConnection *conn_res;                              
+      234      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      235          return make_error_tuple(env, "invalid_connection");
+      236      }
+      237  
+      238 -    if (*conn_res != NULL) {                                  
+      238 +    if (conn_res->conn != NULL) {                             
+      239          // Close with default mode
+      240 -        dpiConn_close(*conn_res, DPI_MODE_CONN_CLOSE_DEFAULT, 
+          -NULL, 0);                                                     
+      241 -        dpiConn_release(*conn_res);                           
+      242 -        *conn_res = NULL;                                     
+      240 +        dpiConn_close(conn_res->conn, DPI_MODE_CONN_CLOSE_DEFA
+          +ULT, NULL, 0);                                                
+      241 +        dpiConn_release(conn_res->conn);                      
+      242 +        conn_res->conn = NULL;                                
+      243      }
+      244  
+      245      return ATOM_OK;
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 5 lines                                      
+      252          return enif_make_badarg(env);
+      253      }
+      254  
+      255 -    dpiConn **conn_res;                                       
+      255 +    InexoraConnection *conn_res;                              
+      256      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      257          return make_error_tuple(env, "invalid_connection");
+      258      }
+      259  
+      260 -    if (*conn_res == NULL) {                                  
+      260 +    if (conn_res->conn == NULL) {                             
+      261          return make_error_tuple(env, "connection_closed");
+      262      }
+      263  
+      264 -    if (dpiConn_ping(*conn_res) < 0) {                        
+      265 -        // Get error from the connection's context            
+      264 +    if (dpiConn_ping(conn_res->conn) < 0) {                   
+      265          dpiErrorInfo errorInfo;
+      267 -        dpiConn_getError(*conn_res, &errorInfo);              
+      266 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      267          return make_dpi_error(env, &errorInfo);
+      268      }
+      269  
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      277          return enif_make_badarg(env);
+      278      }
+      279  
+      280 -    dpiConn **conn_res;                                       
+      280 +    InexoraConnection *conn_res;                              
+      281      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      282          return make_error_tuple(env, "invalid_connection");
+      283      }
+      284  
+      285 -    if (*conn_res == NULL) {                                  
+      285 +    if (conn_res->conn == NULL) {                             
+      286          return make_error_tuple(env, "connection_closed");
+      287      }
+      288  
+      289 -    if (dpiConn_commit(*conn_res) < 0) {                      
+      289 +    if (dpiConn_commit(conn_res->conn) < 0) {                 
+      290          dpiErrorInfo errorInfo;
+      291 -        dpiConn_getError(*conn_res, &errorInfo);              
+      291 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      292          return make_dpi_error(env, &errorInfo);
+      293      }
+      294  
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      302          return enif_make_badarg(env);
+      303      }
+      304  
+      305 -    dpiConn **conn_res;                                       
+      305 +    InexoraConnection *conn_res;                              
+      306      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      307          return make_error_tuple(env, "invalid_connection");
+      308      }
+      309  
+      310 -    if (*conn_res == NULL) {                                  
+      310 +    if (conn_res->conn == NULL) {                             
+      311          return make_error_tuple(env, "connection_closed");
+      312      }
+      313  
+      314 -    if (dpiConn_rollback(*conn_res) < 0) {                    
+      314 +    if (dpiConn_rollback(conn_res->conn) < 0) {               
+      315          dpiErrorInfo errorInfo;
+      316 -        dpiConn_getError(*conn_res, &errorInfo);              
+      316 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      317          return make_dpi_error(env, &errorInfo);
+      318      }
+      319  
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      327          return enif_make_badarg(env);
+      328      }
+      329  
+      330 -    dpiConn **conn_res;                                       
+      330 +    InexoraConnection *conn_res;                              
+      331      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      332          return make_error_tuple(env, "invalid_connection");
+      333      }
+      334  
+      335 -    if (*conn_res == NULL) {                                  
+      335 +    if (conn_res->conn == NULL) {                             
+      336          return make_error_tuple(env, "connection_closed");
+      337      }
+      338  
+     ...
+      340      uint32_t releaseStringLength;
+      341      dpiVersionInfo versionInfo;
+      342  
+      343 -    if (dpiConn_getServerVersion(*conn_res, &releaseString, &r
+          -eleaseStringLength, &versionInfo) < 0) {                      
+      343 +    if (dpiConn_getServerVersion(conn_res->conn, &releaseStrin
+          +g, &releaseStringLength, &versionInfo) < 0) {                 
+      344          dpiErrorInfo errorInfo;
+      345 -        dpiConn_getError(*conn_res, &errorInfo);              
+      345 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      346          return make_dpi_error(env, &errorInfo);
+      347      }
+      348  
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      365          return enif_make_badarg(env);
+      366      }
+      367  
+      368 -    dpiConn **conn_res;                                       
+      368 +    InexoraConnection *conn_res;                              
+      369      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      370          return make_error_tuple(env, "invalid_connection");
+      371      }
+      372  
+      373 -    if (*conn_res == NULL) {                                  
+      373 +    if (conn_res->conn == NULL) {                             
+      374          return make_error_tuple(env, "connection_closed");
+      375      }
+      376  
+      377      int isHealthy;
+      378 -    if (dpiConn_getIsHealthy(*conn_res, &isHealthy) < 0) {    
+      378 +    if (dpiConn_getIsHealthy(conn_res->conn, &isHealthy) < 0) 
+          +{                                                             
+      379          dpiErrorInfo errorInfo;
+      380 -        dpiConn_getError(*conn_res, &errorInfo);              
+      380 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      381          return make_dpi_error(env, &errorInfo);
+      382      }
+      383  
+
+⏺ Update(c_src/inexora_nif.c)
+  ⎿  Added 4 lines, removed 4 lines                                      
+      391          return enif_make_badarg(env);
+      392      }
+      393  
+      394 -    dpiConn **conn_res;                                       
+      394 +    InexoraConnection *conn_res;                              
+      395      if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_T
+           YPE, (void **)&conn_res)) {
+      396          return make_error_tuple(env, "invalid_connection");
+      397      }
+      398  
+      399 -    if (*conn_res == NULL) {                                  
+      399 +    if (conn_res->conn == NULL) {                             
+      400          return make_error_tuple(env, "connection_closed");
+      401      }
+      402  
+      403      int inProgress;
+      404 -    if (dpiConn_getTransactionInProgress(*conn_res, &inProgres
+          -s) < 0) {                                                     
+      404 +    if (dpiConn_getTransactionInProgress(conn_res->conn, &inPr
+          +ogress) < 0) {                                                
+      405          dpiErrorInfo errorInfo;
+      406 -        dpiConn_getError(*conn_res, &errorInfo);              
+      406 +        dpiContext_getError(conn_res->context, &errorInfo);   
+      407          return make_dpi_error(env, &errorInfo);
+      408      }
+      409  
+
+⏺ Bash(mix compile 2>&1)
+  ⎿ cc -O2 -Wall -Wextra -Wno-unused-parameter                           
+    -I/usr/local/Cellar/erlang/2
+    8.2/lib/erlang/erts-16.1.2/include -Ic_src/odpi/include -o
+    priv/inexora
+    _nif.so c_src/inexora_nif.c c_src/odpi/embed/dpi.c -dynamiclib
+    -undefin
+    … +20 lines (ctrl+o to expand)
+
+⏺ Compilation succeeded. Let me fix the warning in the error module and run the tests.
+
+⏺ Read(lib/inexora/error.ex)
+  ⎿  Read 57 lines
+
+⏺ Update(lib/inexora/error.ex)
+  ⎿  Added 11 lines, removed 6 lines                                     
+      19    def message(%__MODULE__{message: message}), do: message
+      20  
+      21    @doc """
+      22 -  Creates an error from an ODPI-C error tuple.                 
+      22 +  Creates an error from an ODPI-C error tuple or simple reason.
+      23  
+      24    ODPI-C errors are returned as `{code, function_name, message}
+          ` tuples.
+      25 +  Simple reasons can be strings, atoms, or charlists.          
+      26  
+      27    ## Examples
+      28  
+      29        iex> Inexora.Error.from_odpi({1017, "dpiConn_create", "OR
+          A-01017: invalid username/password"})
+      30        %Inexora.Error{message: "ORA-01017: invalid username/pass
+          word", oracle_code: 1017, function: "dpiConn_create"}
+      31 +                                                               
+      32 +      iex> Inexora.Error.from_odpi("connection failed")        
+      33 +      %Inexora.Error{message: "connection failed"}             
+      34    """
+      31 -  @spec from_odpi({integer(), String.t() | charlist(), String.t
+         -() | charlist()}) :: t()                                       
+      35 +  @spec from_odpi(                                             
+      36 +          {integer(), String.t() | charlist(), String.t() | cha
+         +rlist()}                                                       
+      37 +          | String.t()                                         
+      38 +          | atom()                                             
+      39 +          | charlist()                                         
+      40 +        ) :: t()                                               
+      41    def from_odpi({code, function, message}) when is_integer(code
+          ) do
+      42      %__MODULE__{
+      43        message: to_string(message),
+     ...
+      47      }
+      48    end
+      49  
+      41 -  @doc """                                                     
+      42 -  Creates an error from a simple reason (string or atom).      
+      43 -  """                                                          
+      44 -  @spec from_odpi(String.t() | atom()) :: t()                  
+      50    def from_odpi(reason) when is_binary(reason) do
+      51      %__MODULE__{message: reason}
+      52    end
+
+⏺ Bash(mix test 2>&1)
+  ⎿  make: Nothing to be done for `all'.
+     Compiling 3 files (.ex)
+     Generated inexora app
+     … +6 lines (ctrl+o to expand)
+
+⏺ All tests pass. Let me mark the todo as complete.
+
+⏺ Database connection implementation complete. Here's what was added:
+
+  Summary
+
+  New NIF Functions (C):
+  - conn_create/4 - Create database connection
+  - conn_close/1 - Close connection
+  - conn_ping/1 - Ping connection (dirty I/O)
+  - conn_commit/1 - Commit transaction (dirty I/O)
+  - conn_rollback/1 - Rollback transaction (dirty I/O)
+  - conn_get_server_version/1 - Get Oracle server version
+  - conn_get_is_healthy/1 - Check connection health
+  - conn_get_transaction_in_progress/1 - Check transaction status
+
+  New Elixir Modules:
+  - Inexora.Error - Exception struct for database errors
+  - Inexora.Connection - DBConnection behaviour implementation
+
+  Tests:
+  - test/inexora/nif_connection_test.exs - NIF connection tests
+  - test/inexora/connection_test.exs - DBConnection tests
+  - All tagged :oracle_database (excluded by default)
+
+  Test Results:
+  5 tests, 0 failures (18 excluded - require Oracle)
+
+  The connection implementation is ready. When you have an Oracle database available, you can test with:
+  ORACLE_DATABASE_AVAILABLE=1 \
+  ORACLE_USER=your_user \
+  ORACLE_PASSWORD=your_pass \
+  ORACLE_DATABASE=localhost:1521/FREEPDB1 \
+  mix test
+
+  Would you like me to commit this?
+
+✻ Crunched for 12m 33s
+
+❯ commit and implement SQL statement execution 
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora status)
+  ⎿  On branch develop                                           
+     Changes not staged for commit:
+       (use "git add <file>..." to update what will be committed)
+     … +14 lines (ctrl+o to expand)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora diff --stat)
+  ⎿  c_src/inexora_nif.c  | 297                                          
+    +++++++++++++++++++++++++++++++++++++++++++
+    +++++++-
+     lib/inexora/nif.ex   |  78 ++++++++++++++
+    … +2 lines (ctrl+o to expand)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora log --oneline -3)
+  ⎿  244d30a Add minimal NIF infrastructure with ODPI-C integration
+     6e33890 initial commit 🚀
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora add c_src/inexora_nif.c
+      lib/inexora/nif.ex test/test_helper.exs lib/inexora/connection.ex
+      lib/inexora/error.ex tes…)
+  ⎿  (No content)
+
+⏺ Bash(git -C /Users/ian/projects/sandbox/cc/inexora commit -m "Add database
+      connection support with DBConnection behaviour…)
+  ⎿ [develop 54e2c14] Add database connection support with DBConnection  
+    beh
+    aviour
+     7 files changed, 916 insertions(+), 5 deletions(-)
+    … +4 lines (ctrl+o to expand)
+
+⏺ Committed. Now let me plan SQL statement execution.
+                                                                   
+⏺ Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+⏺ 2 Explore agents finished (ctrl+o to expand)
+   ├─ Explore ODPI-C statement API · 33 tool uses · 64.1k tokens
+   │  ⎿  Done
+   └─ Explore current Inexora NIF patterns · 17 tool uses · 32.0k tokens
+      ⎿  Done
+
+⏺ Excellent exploration results. Let me design the implementation plan.
+
+⏺ Plan(Design SQL statement execution plan)
+  ⎿  Done (14 tool uses · 0 tokens · 30s)                                
+
+  ⎿  You've hit your limit · resets 5pm (America/Phoenix)
+     /upgrade to increase your usage limit.
+
+✻ Cooked for 3m 6s
+
+
+
