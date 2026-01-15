@@ -22,3 +22,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 inexora-*.tar
 
+# NIF artifacts
+/priv/*.so
+/priv/*.dylib
+/priv/*.dll
+c_src/*.o
+
