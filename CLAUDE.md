@@ -134,18 +134,19 @@
 - [core] Result set fetching with column metadata
 - [core] Parameter binding with positional placeholders (:1, :2, etc.)
 - [datatype] VARCHAR2/CHAR → binary (String)
-- [datatype] NUMBER → integer/float
+- [datatype] NUMBER → Decimal (with full precision)
 - [datatype] DATE → Date
 - [datatype] TIMESTAMP/TIMESTAMP_TZ/TIMESTAMP_LTZ → NaiveDateTime
+- [datatype] CLOB → binary (String)
+- [datatype] BLOB → binary (raw)
 - [datatype] NULL handling
 
 **In Progress**:
-- Testing with live Oracle database
+- Ecto adapter implementation
 
 **TODO/Upcoming**:
-- [datatype] CLOB/BLOB support
-- [datatype] Decimal precision for NUMBER
 - [datatype] INTERVAL types
+- [datatype] RAW/LONG RAW types
 - [core] Cursor/streaming support for large result sets
 - [core] Named parameter binding (:name style)
 - [core] Batch/array operations
