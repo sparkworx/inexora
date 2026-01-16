@@ -21,6 +21,7 @@ CFLAGS += -Ic_src/odpi/include
 ifeq ($(UNAME_S),Darwin)
 	# macOS
 	LDFLAGS = -dynamiclib -undefined dynamic_lookup
+	LDFLAGS += -L/usr/local/lib -Wl,-rpath,/usr/local/lib
 	NIF_EXT = .so
 else ifeq ($(UNAME_S),Linux)
 	# Linux
