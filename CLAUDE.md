@@ -182,8 +182,8 @@
 ### Environment Variables
 
 For running integration tests against Oracle:
-- `ORACLE_USER` - Database username (default: `test_user`)
-- `ORACLE_PASSWORD` - Database password (default: `test_password`)
+- `ORACLE_USER` - Database username (default: `inexora`)
+- `ORACLE_PASSWORD` - Database password (default: `Welcome4321`)
 - `ORACLE_DATABASE` - Connection string (default: `localhost:1521/FREEPDB1`)
 
 Tests tagged `:oracle_database` are excluded by default. To run them:
