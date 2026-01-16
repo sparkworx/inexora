@@ -37,6 +37,26 @@ defmodule Inexora.Type do
 
   def to_elixir(value, _column_info), do: value
 
+  defp convert_from_oracle(value, @oracle_type_number) when is_binary(value) do
+    # NUMBER columns are now fetched as bytes (string) for precision
+    # Convert to Decimal for arbitrary precision arithmetic
+    case Decimal.parse(value) do
+      {decimal, ""} -> decimal
+      {decimal, _remainder} -> decimal
+      :error -> value
+    end
+  end
+
+  defp convert_from_oracle(value, @oracle_type_number) when is_integer(value) do
+    # Integer values can stay as integers
+    value
+  end
+
+  defp convert_from_oracle(value, @oracle_type_number) when is_float(value) do
+    # Float values should be converted to Decimal for consistency
+    Decimal.from_float(value)
+  end
+
   defp convert_from_oracle(value, oracle_type)
        when oracle_type in [@oracle_type_date] do
     case value do

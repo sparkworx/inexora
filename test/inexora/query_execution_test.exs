@@ -49,7 +49,8 @@ defmodule Inexora.QueryExecutionTest do
         assert result.columns == ["NUM", "STR"]
         assert result.num_rows == 1
         assert [[num, str]] = result.rows
-        assert num == 1 or num == "1"
+        # Numbers are returned as Decimal for precision
+        assert Decimal.equal?(num, Decimal.new(1)) or num == 1
         assert str == "hello"
 
         Connection.disconnect(nil, new_state)
@@ -82,7 +83,8 @@ defmodule Inexora.QueryExecutionTest do
 
         assert result.num_rows == 1
         assert [[val]] = result.rows
-        assert val == 42 or val == "42"
+        # Numbers are returned as Decimal for precision
+        assert Decimal.equal?(val, Decimal.new(42)) or val == 42
 
         Connection.disconnect(nil, new_state)
       end
@@ -98,6 +100,40 @@ defmodule Inexora.QueryExecutionTest do
         assert result.num_rows == 1
         assert [[val]] = result.rows
         assert val == "test"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "returns NUMBER with decimal as Decimal" do
+      with {:ok, state} <- connect_test_db() do
+        # Test that decimal precision is preserved
+        query = Query.new("SELECT 123.456789012345678901234567890 AS num FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[val]] = result.rows
+        assert %Decimal{} = val
+        # Verify precision is preserved (at least the first several digits)
+        assert Decimal.to_string(val) =~ "123.456789"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "returns NUMBER integer as Decimal" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT 42 AS num FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[val]] = result.rows
+        assert %Decimal{} = val
+        assert Decimal.equal?(val, Decimal.new("42"))
 
         Connection.disconnect(nil, new_state)
       end

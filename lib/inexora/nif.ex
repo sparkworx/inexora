@@ -238,4 +238,19 @@ defmodule Inexora.Nif do
   """
   @spec stmt_close(stmt()) :: :ok | {:error, reason()}
   def stmt_close(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Defines a column to be fetched as bytes (string) instead of native type.
+
+  This is used for NUMBER columns to preserve decimal precision.
+  Must be called after execute but before fetching rows.
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `pos` - Column position (1-based)
+    * `max_size` - Maximum size of the string representation
+  """
+  @spec stmt_define_as_bytes(stmt(), pos_integer(), pos_integer()) :: :ok | {:error, reason()}
+  def stmt_define_as_bytes(_stmt, _pos, _max_size), do: :erlang.nif_error(:not_loaded)
 end

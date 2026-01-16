@@ -3,6 +3,7 @@
 
 #include <erl_nif.h>
 #include <string.h>
+#include <stdio.h>
 #include "dpi.h"
 
 // Resource types
@@ -635,12 +636,27 @@ static ERL_NIF_TERM nif_stmt_get_query_value(ErlNifEnv *env, int argc, const ERL
         case DPI_NATIVE_TYPE_UINT64:
             value = enif_make_uint64(env, data->value.asUint64);
             break;
-        case DPI_NATIVE_TYPE_FLOAT:
-            value = enif_make_double(env, (double)data->value.asFloat);
+        case DPI_NATIVE_TYPE_FLOAT: {
+            // Convert float to string for Decimal precision
+            char buf[64];
+            int len = snprintf(buf, sizeof(buf), "%.17g", (double)data->value.asFloat);
+            ERL_NIF_TERM bin;
+            unsigned char *str = enif_make_new_binary(env, len, &bin);
+            memcpy(str, buf, len);
+            value = bin;
             break;
-        case DPI_NATIVE_TYPE_DOUBLE:
-            value = enif_make_double(env, data->value.asDouble);
+        }
+        case DPI_NATIVE_TYPE_DOUBLE: {
+            // Convert double to string for Decimal precision
+            // Using %.17g gives maximum precision for doubles
+            char buf[64];
+            int len = snprintf(buf, sizeof(buf), "%.17g", data->value.asDouble);
+            ERL_NIF_TERM bin;
+            unsigned char *str = enif_make_new_binary(env, len, &bin);
+            memcpy(str, buf, len);
+            value = bin;
             break;
+        }
         case DPI_NATIVE_TYPE_BYTES: {
             // Return as binary
             ERL_NIF_TERM bin;
@@ -804,6 +820,56 @@ static ERL_NIF_TERM nif_stmt_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
     return ATOM_OK;
 }
 
+// Define a column to be fetched as bytes (for NUMBER precision)
+// stmt_define_as_bytes(stmt, pos, max_size) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_define_as_bytes(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    unsigned int max_size;
+    if (!enif_get_uint(env, argv[2], &max_size)) {
+        return make_error_tuple(env, "invalid_max_size");
+    }
+
+    // Create a variable to fetch NUMBER as bytes (string)
+    dpiVar *var;
+    dpiData *data;
+    if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_NUMBER, DPI_NATIVE_TYPE_BYTES,
+                       1, max_size, 0, 0, NULL, &var, &data) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Define the column to use this variable
+    if (dpiStmt_define(stmt_res->stmt, pos, var) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        dpiVar_release(var);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Note: The variable is now owned by the statement and will be released when
+    // the statement is closed. We don't need to track it separately.
+
+    return ATOM_OK;
+}
+
 // ============================================================
 // NIF Registration
 // ============================================================
@@ -831,7 +897,8 @@ static ErlNifFunc nif_funcs[] = {
     {"stmt_get_query_value", 2, nif_stmt_get_query_value, 0},
     {"stmt_get_row_count", 1, nif_stmt_get_row_count, 0},
     {"stmt_bind_value_by_pos", 4, nif_stmt_bind_value_by_pos, 0},
-    {"stmt_close", 1, nif_stmt_close, 0}
+    {"stmt_close", 1, nif_stmt_close, 0},
+    {"stmt_define_as_bytes", 3, nif_stmt_define_as_bytes, 0}
 };
 
 // on_load callback - initialize resources and atoms

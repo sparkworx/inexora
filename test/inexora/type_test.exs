@@ -98,6 +98,44 @@ defmodule Inexora.TypeTest do
       assert Type.to_elixir(42, %{}) == 42
     end
 
+    # Oracle NUMBER type (2010) - Decimal precision tests
+    test "converts NUMBER string to Decimal" do
+      # NUMBER columns are fetched as bytes (string) for precision
+      result = Type.to_elixir("123.456", %{oracle_type: 2010})
+      assert %Decimal{} = result
+      assert Decimal.equal?(result, Decimal.new("123.456"))
+    end
+
+    test "converts NUMBER string with high precision to Decimal" do
+      # Test high precision decimal
+      value = "12345678901234567890.12345678901234567890"
+      result = Type.to_elixir(value, %{oracle_type: 2010})
+      assert %Decimal{} = result
+      assert Decimal.equal?(result, Decimal.new(value))
+    end
+
+    test "converts NUMBER integer string to Decimal" do
+      result = Type.to_elixir("42", %{oracle_type: 2010})
+      assert %Decimal{} = result
+      assert Decimal.equal?(result, Decimal.new("42"))
+    end
+
+    test "converts NUMBER negative string to Decimal" do
+      result = Type.to_elixir("-99.99", %{oracle_type: 2010})
+      assert %Decimal{} = result
+      assert Decimal.equal?(result, Decimal.new("-99.99"))
+    end
+
+    test "keeps NUMBER integer as integer" do
+      result = Type.to_elixir(42, %{oracle_type: 2010})
+      assert result == 42
+    end
+
+    test "converts NUMBER float to Decimal" do
+      result = Type.to_elixir(3.14, %{oracle_type: 2010})
+      assert %Decimal{} = result
+    end
+
     # Oracle DATE type (2011)
     test "converts DATE tuple to Date" do
       value = {2024, 1, 15, 10, 30, 0, 0}
