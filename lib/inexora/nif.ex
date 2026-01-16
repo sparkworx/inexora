@@ -286,4 +286,207 @@ defmodule Inexora.Nif do
   """
   @spec stmt_define_as_bytes(stmt(), pos_integer(), pos_integer()) :: :ok | {:error, reason()}
   def stmt_define_as_bytes(_stmt, _pos, _max_size), do: :erlang.nif_error(:not_loaded)
+
+  # ============================================================
+  # Variable Functions (for batch/array operations)
+  # ============================================================
+
+  @type variable :: reference()
+  @type oracle_type ::
+          :varchar
+          | :nvarchar
+          | :char
+          | :nchar
+          | :number
+          | :native_int
+          | :native_uint
+          | :native_float
+          | :native_double
+          | :date
+          | :timestamp
+          | :timestamp_tz
+          | :timestamp_ltz
+          | :raw
+          | :long_raw
+          | :clob
+          | :nclob
+          | :blob
+          | :rowid
+          | :interval_ds
+          | :interval_ym
+  @type native_type ::
+          :bytes | :int64 | :uint64 | :float | :double | :timestamp | :interval_ds | :interval_ym | :lob | :rowid
+
+  @doc """
+  Creates a new variable for array/batch operations.
+
+  ## Parameters
+
+    * `conn` - Connection reference
+    * `oracle_type` - Oracle data type atom (:varchar, :number, :raw, etc.)
+    * `native_type` - Native data type atom (:bytes, :int64, :double, etc.)
+    * `max_array_size` - Maximum number of elements in the array
+    * `size` - Size per element (for bytes/string types)
+
+  ## Example
+
+      # Create a variable for 10 string values, each up to 100 chars
+      {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 10, 100)
+
+      # Create a variable for 10 integer values
+      {:ok, var} = Nif.conn_new_var(conn, :number, :int64, 10, 0)
+  """
+  @spec conn_new_var(conn(), oracle_type(), native_type(), pos_integer(), non_neg_integer()) ::
+          {:ok, variable()} | {:error, reason()}
+  def conn_new_var(_conn, _oracle_type, _native_type, _max_array_size, _size),
+    do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets the number of active elements in the array.
+
+  Call this before executing to specify how many array elements to process.
+
+  ## Example
+
+      :ok = Nif.var_set_num_elements(var, 5)  # Process 5 elements
+  """
+  @spec var_set_num_elements(variable(), non_neg_integer()) :: :ok | {:error, reason()}
+  def var_set_num_elements(_var, _num_elements), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the number of active elements in the array.
+
+  After execution, this may reflect the actual number of elements populated.
+  """
+  @spec var_get_num_elements(variable()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def var_get_num_elements(_var), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets a bytes/string value at the given array position (0-indexed).
+
+  ## Example
+
+      :ok = Nif.var_set_from_bytes(var, 0, "first_value")
+      :ok = Nif.var_set_from_bytes(var, 1, "second_value")
+  """
+  @spec var_set_from_bytes(variable(), non_neg_integer(), binary()) :: :ok | {:error, reason()}
+  def var_set_from_bytes(_var, _pos, _value), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets an integer value at the given array position (0-indexed).
+
+  ## Example
+
+      :ok = Nif.var_set_from_int(var, 0, 100)
+      :ok = Nif.var_set_from_int(var, 1, 200)
+  """
+  @spec var_set_from_int(variable(), non_neg_integer(), integer()) :: :ok | {:error, reason()}
+  def var_set_from_int(_var, _pos, _value), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets a double/float value at the given array position (0-indexed).
+
+  ## Example
+
+      :ok = Nif.var_set_from_double(var, 0, 3.14)
+      :ok = Nif.var_set_from_double(var, 1, 2.71)
+  """
+  @spec var_set_from_double(variable(), non_neg_integer(), number()) :: :ok | {:error, reason()}
+  def var_set_from_double(_var, _pos, _value), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets NULL at the given array position (0-indexed).
+
+  ## Example
+
+      :ok = Nif.var_set_null(var, 2)  # Set position 2 to NULL
+  """
+  @spec var_set_null(variable(), non_neg_integer()) :: :ok | {:error, reason()}
+  def var_set_null(_var, _pos), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the returned data from a RETURNING INTO clause.
+
+  After executing a DML statement with RETURNING INTO, call this to retrieve
+  the returned values.
+
+  ## Parameters
+
+    * `var` - Variable reference (must be bound to a RETURNING clause)
+    * `pos` - Array position (typically 0 for single-row operations)
+
+  ## Returns
+
+    `{:ok, [values]}` - List of returned values
+
+  ## Example
+
+      # After INSERT ... RETURNING id INTO :id_var
+      {:ok, [returned_id]} = Nif.var_get_returned_data(id_var, 0)
+  """
+  @spec var_get_returned_data(variable(), non_neg_integer()) :: {:ok, list()} | {:error, reason()}
+  def var_get_returned_data(_var, _pos), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the value at the given array position (0-indexed).
+
+  Useful for reading back OUT parameter values after execution.
+  """
+  @spec var_get_value(variable(), non_neg_integer()) :: {:ok, term()} | {:error, reason()}
+  def var_get_value(_var, _pos), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Releases a variable.
+
+  The variable will also be released when garbage collected, but this
+  can be called to release immediately.
+  """
+  @spec var_release(variable()) :: :ok | {:error, reason()}
+  def var_release(_var), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Binds a variable by position.
+
+  Unlike `stmt_bind_value_by_pos`, this binds a variable reference which can
+  hold multiple values for batch operations.
+
+  ## Example
+
+      :ok = Nif.stmt_bind_by_pos(stmt, 1, var)
+  """
+  @spec stmt_bind_by_pos(stmt(), pos_integer(), variable()) :: :ok | {:error, reason()}
+  def stmt_bind_by_pos(_stmt, _pos, _var), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Binds a variable by name.
+
+  Unlike `stmt_bind_value_by_name`, this binds a variable reference which can
+  hold multiple values for batch operations.
+
+  ## Example
+
+      :ok = Nif.stmt_bind_by_name(stmt, "NAME", var)
+  """
+  @spec stmt_bind_by_name(stmt(), binary(), variable()) :: :ok | {:error, reason()}
+  def stmt_bind_by_name(_stmt, _name, _var), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Executes a statement multiple times (batch/array DML).
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `num_iters` - Number of iterations to execute (must match array sizes)
+
+  ## Returns
+
+    `{:ok, num_columns}` - Number of query columns (0 for DML)
+
+  ## Example
+
+      # After binding arrays with 5 elements each
+      {:ok, 0} = Nif.stmt_execute_many(stmt, 5)
+  """
+  @spec stmt_execute_many(stmt(), pos_integer()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def stmt_execute_many(_stmt, _num_iters), do: :erlang.nif_error(:not_loaded)
 end

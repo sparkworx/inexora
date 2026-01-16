@@ -10,6 +10,7 @@
 static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
 static ErlNifResourceType *CONNECTION_RESOURCE_TYPE;
 static ErlNifResourceType *STATEMENT_RESOURCE_TYPE;
+static ErlNifResourceType *VARIABLE_RESOURCE_TYPE;
 
 // Connection resource struct - holds both context and connection
 typedef struct {
@@ -23,6 +24,17 @@ typedef struct {
     dpiConn *conn;
     dpiStmt *stmt;
 } InexoraStatement;
+
+// Variable resource struct - holds variable for array/batch operations
+typedef struct {
+    dpiContext *context;
+    dpiConn *conn;
+    dpiVar *var;
+    dpiData *data;           // Pointer to array of dpiData elements
+    uint32_t maxArraySize;   // Maximum number of elements in array
+    dpiOracleTypeNum oracleTypeNum;
+    dpiNativeTypeNum nativeTypeNum;
+} InexoraVariable;
 
 // Atoms (initialized in on_load)
 static ERL_NIF_TERM ATOM_OK;
@@ -81,6 +93,17 @@ static void statement_destructor(ErlNifEnv *env, void *obj) {
     if (stmt_res->stmt != NULL) {
         dpiStmt_release(stmt_res->stmt);
         stmt_res->stmt = NULL;
+    }
+    // Note: We don't release conn/context here as they're managed separately
+}
+
+// Variable destructor (called when Erlang garbage collects the resource)
+static void variable_destructor(ErlNifEnv *env, void *obj) {
+    (void)env;
+    InexoraVariable *var_res = (InexoraVariable *)obj;
+    if (var_res->var != NULL) {
+        dpiVar_release(var_res->var);
+        var_res->var = NULL;
     }
     // Note: We don't release conn/context here as they're managed separately
 }
@@ -1407,6 +1430,659 @@ static ERL_NIF_TERM nif_stmt_define_as_bytes(ErlNifEnv *env, int argc, const ERL
 }
 
 // ============================================================
+// Variable NIF Functions (for batch/array operations)
+// ============================================================
+
+// Create a new variable for array/batch operations
+// conn_new_var(conn, oracle_type, native_type, max_array_size, size) -> {:ok, var} | {:error, reason}
+// oracle_type: atom (:varchar, :number, :raw, :date, :timestamp, :clob, :blob, etc.)
+// native_type: atom (:bytes, :int64, :uint64, :double, :float, :timestamp, etc.)
+static ERL_NIF_TERM nif_conn_new_var(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 5) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraConnection *conn_res;
+    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_TYPE, (void **)&conn_res)) {
+        return make_error_tuple(env, "invalid_connection");
+    }
+
+    if (conn_res->conn == NULL) {
+        return make_error_tuple(env, "connection_closed");
+    }
+
+    // Get oracle_type atom
+    char oracle_type_str[64];
+    if (!enif_get_atom(env, argv[1], oracle_type_str, sizeof(oracle_type_str), ERL_NIF_LATIN1)) {
+        return make_error_tuple(env, "invalid_oracle_type");
+    }
+
+    // Get native_type atom
+    char native_type_str[64];
+    if (!enif_get_atom(env, argv[2], native_type_str, sizeof(native_type_str), ERL_NIF_LATIN1)) {
+        return make_error_tuple(env, "invalid_native_type");
+    }
+
+    unsigned int max_array_size;
+    if (!enif_get_uint(env, argv[3], &max_array_size) || max_array_size == 0) {
+        return make_error_tuple(env, "invalid_max_array_size");
+    }
+
+    unsigned int size;
+    if (!enif_get_uint(env, argv[4], &size)) {
+        return make_error_tuple(env, "invalid_size");
+    }
+
+    // Map oracle_type atom to dpiOracleTypeNum
+    dpiOracleTypeNum oracleTypeNum;
+    if (strcmp(oracle_type_str, "varchar") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_VARCHAR;
+    } else if (strcmp(oracle_type_str, "nvarchar") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NVARCHAR;
+    } else if (strcmp(oracle_type_str, "char") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_CHAR;
+    } else if (strcmp(oracle_type_str, "nchar") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NCHAR;
+    } else if (strcmp(oracle_type_str, "number") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NUMBER;
+    } else if (strcmp(oracle_type_str, "native_int") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NATIVE_INT;
+    } else if (strcmp(oracle_type_str, "native_uint") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NATIVE_UINT;
+    } else if (strcmp(oracle_type_str, "native_float") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NATIVE_FLOAT;
+    } else if (strcmp(oracle_type_str, "native_double") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NATIVE_DOUBLE;
+    } else if (strcmp(oracle_type_str, "date") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_DATE;
+    } else if (strcmp(oracle_type_str, "timestamp") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_TIMESTAMP;
+    } else if (strcmp(oracle_type_str, "timestamp_tz") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_TIMESTAMP_TZ;
+    } else if (strcmp(oracle_type_str, "timestamp_ltz") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_TIMESTAMP_LTZ;
+    } else if (strcmp(oracle_type_str, "raw") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_RAW;
+    } else if (strcmp(oracle_type_str, "long_raw") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_LONG_RAW;
+    } else if (strcmp(oracle_type_str, "clob") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_CLOB;
+    } else if (strcmp(oracle_type_str, "nclob") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_NCLOB;
+    } else if (strcmp(oracle_type_str, "blob") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_BLOB;
+    } else if (strcmp(oracle_type_str, "rowid") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_ROWID;
+    } else if (strcmp(oracle_type_str, "interval_ds") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_INTERVAL_DS;
+    } else if (strcmp(oracle_type_str, "interval_ym") == 0) {
+        oracleTypeNum = DPI_ORACLE_TYPE_INTERVAL_YM;
+    } else {
+        return make_error_tuple(env, "unsupported_oracle_type");
+    }
+
+    // Map native_type atom to dpiNativeTypeNum
+    dpiNativeTypeNum nativeTypeNum;
+    if (strcmp(native_type_str, "bytes") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_BYTES;
+    } else if (strcmp(native_type_str, "int64") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_INT64;
+    } else if (strcmp(native_type_str, "uint64") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_UINT64;
+    } else if (strcmp(native_type_str, "float") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_FLOAT;
+    } else if (strcmp(native_type_str, "double") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_DOUBLE;
+    } else if (strcmp(native_type_str, "timestamp") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_TIMESTAMP;
+    } else if (strcmp(native_type_str, "interval_ds") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_INTERVAL_DS;
+    } else if (strcmp(native_type_str, "interval_ym") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_INTERVAL_YM;
+    } else if (strcmp(native_type_str, "lob") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_LOB;
+    } else if (strcmp(native_type_str, "rowid") == 0) {
+        nativeTypeNum = DPI_NATIVE_TYPE_ROWID;
+    } else {
+        return make_error_tuple(env, "unsupported_native_type");
+    }
+
+    dpiVar *var;
+    dpiData *data;
+    if (dpiConn_newVar(conn_res->conn, oracleTypeNum, nativeTypeNum,
+                       max_array_size, size, 0, 0, NULL, &var, &data) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(conn_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Wrap variable in Erlang resource
+    InexoraVariable *var_res = enif_alloc_resource(VARIABLE_RESOURCE_TYPE, sizeof(InexoraVariable));
+    var_res->context = conn_res->context;
+    var_res->conn = conn_res->conn;
+    var_res->var = var;
+    var_res->data = data;
+    var_res->maxArraySize = max_array_size;
+    var_res->oracleTypeNum = oracleTypeNum;
+    var_res->nativeTypeNum = nativeTypeNum;
+
+    ERL_NIF_TERM result = enif_make_resource(env, var_res);
+    enif_release_resource(var_res);
+
+    return make_ok_tuple(env, result);
+}
+
+// Set the number of elements in the array
+// var_set_num_elements(var, num_elements) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_set_num_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int num_elements;
+    if (!enif_get_uint(env, argv[1], &num_elements)) {
+        return make_error_tuple(env, "invalid_num_elements");
+    }
+
+    if (num_elements > var_res->maxArraySize) {
+        return make_error_tuple(env, "num_elements_exceeds_max_array_size");
+    }
+
+    if (dpiVar_setNumElementsInArray(var_res->var, num_elements) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(var_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Get the number of elements in the array
+// var_get_num_elements(var) -> {:ok, num_elements} | {:error, reason}
+static ERL_NIF_TERM nif_var_get_num_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    uint32_t num_elements;
+    if (dpiVar_getNumElementsInArray(var_res->var, &num_elements) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(var_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return make_ok_tuple(env, enif_make_uint(env, num_elements));
+}
+
+// Set bytes value at array position
+// var_set_from_bytes(var, pos, value) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_set_from_bytes(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    if (pos >= var_res->maxArraySize) {
+        return make_error_tuple(env, "position_out_of_bounds");
+    }
+
+    ErlNifBinary bin;
+    if (!enif_inspect_binary(env, argv[2], &bin)) {
+        return make_error_tuple(env, "invalid_binary_value");
+    }
+
+    if (dpiVar_setFromBytes(var_res->var, pos, (const char *)bin.data, bin.size) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(var_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Set integer value at array position
+// var_set_from_int(var, pos, value) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_set_from_int(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    if (pos >= var_res->maxArraySize) {
+        return make_error_tuple(env, "position_out_of_bounds");
+    }
+
+    ErlNifSInt64 value;
+    if (!enif_get_int64(env, argv[2], &value)) {
+        return make_error_tuple(env, "invalid_integer_value");
+    }
+
+    // Set directly in the data array
+    var_res->data[pos].isNull = 0;
+    var_res->data[pos].value.asInt64 = value;
+
+    return ATOM_OK;
+}
+
+// Set double value at array position
+// var_set_from_double(var, pos, value) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_set_from_double(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    if (pos >= var_res->maxArraySize) {
+        return make_error_tuple(env, "position_out_of_bounds");
+    }
+
+    double value;
+    if (!enif_get_double(env, argv[2], &value)) {
+        // Try integer conversion
+        ErlNifSInt64 int_val;
+        if (enif_get_int64(env, argv[2], &int_val)) {
+            value = (double)int_val;
+        } else {
+            return make_error_tuple(env, "invalid_double_value");
+        }
+    }
+
+    // Set directly in the data array
+    var_res->data[pos].isNull = 0;
+    var_res->data[pos].value.asDouble = value;
+
+    return ATOM_OK;
+}
+
+// Set NULL at array position
+// var_set_null(var, pos) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_set_null(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    if (pos >= var_res->maxArraySize) {
+        return make_error_tuple(env, "position_out_of_bounds");
+    }
+
+    // Set null flag in the data array
+    var_res->data[pos].isNull = 1;
+
+    return ATOM_OK;
+}
+
+// Helper function to convert dpiData to Erlang term
+static ERL_NIF_TERM data_to_term(ErlNifEnv *env, dpiData *data, dpiNativeTypeNum nativeTypeNum, dpiContext *context) {
+    if (data->isNull) {
+        return ATOM_NIL;
+    }
+
+    ERL_NIF_TERM value;
+    switch (nativeTypeNum) {
+        case DPI_NATIVE_TYPE_INT64:
+            value = enif_make_int64(env, data->value.asInt64);
+            break;
+        case DPI_NATIVE_TYPE_UINT64:
+            value = enif_make_uint64(env, data->value.asUint64);
+            break;
+        case DPI_NATIVE_TYPE_FLOAT: {
+            char buf[64];
+            int len = snprintf(buf, sizeof(buf), "%.17g", (double)data->value.asFloat);
+            unsigned char *str = enif_make_new_binary(env, len, &value);
+            memcpy(str, buf, len);
+            break;
+        }
+        case DPI_NATIVE_TYPE_DOUBLE: {
+            char buf[64];
+            int len = snprintf(buf, sizeof(buf), "%.17g", data->value.asDouble);
+            unsigned char *str = enif_make_new_binary(env, len, &value);
+            memcpy(str, buf, len);
+            break;
+        }
+        case DPI_NATIVE_TYPE_BYTES: {
+            unsigned char *buf = enif_make_new_binary(env, data->value.asBytes.length, &value);
+            memcpy(buf, data->value.asBytes.ptr, data->value.asBytes.length);
+            break;
+        }
+        case DPI_NATIVE_TYPE_TIMESTAMP: {
+            dpiTimestamp *ts = &data->value.asTimestamp;
+            value = enif_make_tuple7(env,
+                enif_make_int(env, ts->year),
+                enif_make_uint(env, ts->month),
+                enif_make_uint(env, ts->day),
+                enif_make_uint(env, ts->hour),
+                enif_make_uint(env, ts->minute),
+                enif_make_uint(env, ts->second),
+                enif_make_uint(env, ts->fsecond)
+            );
+            break;
+        }
+        case DPI_NATIVE_TYPE_INTERVAL_DS: {
+            dpiIntervalDS *interval = &data->value.asIntervalDS;
+            value = enif_make_tuple6(env,
+                enif_make_atom(env, "interval_ds"),
+                enif_make_int(env, interval->days),
+                enif_make_int(env, interval->hours),
+                enif_make_int(env, interval->minutes),
+                enif_make_int(env, interval->seconds),
+                enif_make_int(env, interval->fseconds)
+            );
+            break;
+        }
+        case DPI_NATIVE_TYPE_INTERVAL_YM: {
+            dpiIntervalYM *interval = &data->value.asIntervalYM;
+            value = enif_make_tuple3(env,
+                enif_make_atom(env, "interval_ym"),
+                enif_make_int(env, interval->years),
+                enif_make_int(env, interval->months)
+            );
+            break;
+        }
+        case DPI_NATIVE_TYPE_ROWID: {
+            dpiRowid *rowid = data->value.asRowid;
+            const char *rowidStr;
+            uint32_t rowidLen;
+            if (dpiRowid_getStringValue(rowid, &rowidStr, &rowidLen) < 0) {
+                return ATOM_NIL;
+            }
+            unsigned char *buf = enif_make_new_binary(env, rowidLen, &value);
+            memcpy(buf, rowidStr, rowidLen);
+            break;
+        }
+        default:
+            value = ATOM_NIL;
+            break;
+    }
+
+    return value;
+}
+
+// Get returned data from RETURNING INTO clause
+// var_get_returned_data(var, pos) -> {:ok, [values]} | {:error, reason}
+static ERL_NIF_TERM nif_var_get_returned_data(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    uint32_t numElements;
+    dpiData *returnedData;
+    if (dpiVar_getReturnedData(var_res->var, pos, &numElements, &returnedData) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(var_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Build list of returned values
+    ERL_NIF_TERM *elements = enif_alloc(sizeof(ERL_NIF_TERM) * numElements);
+    if (elements == NULL && numElements > 0) {
+        return make_error_tuple(env, "allocation_failed");
+    }
+
+    for (uint32_t i = 0; i < numElements; i++) {
+        elements[i] = data_to_term(env, &returnedData[i], var_res->nativeTypeNum, var_res->context);
+    }
+
+    ERL_NIF_TERM result_list = enif_make_list_from_array(env, elements, numElements);
+
+    if (elements != NULL) {
+        enif_free(elements);
+    }
+
+    return make_ok_tuple(env, result_list);
+}
+
+// Get value at array position (for reading back OUT variables)
+// var_get_value(var, pos) -> {:ok, value} | {:error, reason}
+static ERL_NIF_TERM nif_var_get_value(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    if (pos >= var_res->maxArraySize) {
+        return make_error_tuple(env, "position_out_of_bounds");
+    }
+
+    ERL_NIF_TERM value = data_to_term(env, &var_res->data[pos], var_res->nativeTypeNum, var_res->context);
+
+    return make_ok_tuple(env, value);
+}
+
+// Bind a variable by position
+// stmt_bind_by_pos(stmt, pos, var) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_bind_by_pos(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[2], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    if (dpiStmt_bindByPos(stmt_res->stmt, pos, var_res->var) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Bind a variable by name
+// stmt_bind_by_name(stmt, name, var) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_bind_by_name(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    ErlNifBinary name_bin;
+    if (!enif_inspect_binary(env, argv[1], &name_bin)) {
+        return make_error_tuple(env, "invalid_name");
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[2], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var == NULL) {
+        return make_error_tuple(env, "variable_released");
+    }
+
+    if (dpiStmt_bindByName(stmt_res->stmt, (const char *)name_bin.data, name_bin.size, var_res->var) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Execute statement multiple times (batch/array DML)
+// stmt_execute_many(stmt, num_iters) -> {:ok, num_columns} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_execute_many(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int num_iters;
+    if (!enif_get_uint(env, argv[1], &num_iters) || num_iters == 0) {
+        return make_error_tuple(env, "invalid_num_iters");
+    }
+
+    uint32_t numQueryColumns;
+    if (dpiStmt_executeMany(stmt_res->stmt, DPI_MODE_EXEC_DEFAULT, num_iters) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Get number of query columns (will be 0 for DML)
+    if (dpiStmt_getNumQueryColumns(stmt_res->stmt, &numQueryColumns) < 0) {
+        // Not a query, return 0
+        numQueryColumns = 0;
+    }
+
+    return make_ok_tuple(env, enif_make_uint(env, numQueryColumns));
+}
+
+// Release a variable
+// var_release(var) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_var_release(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraVariable *var_res;
+    if (!enif_get_resource(env, argv[0], VARIABLE_RESOURCE_TYPE, (void **)&var_res)) {
+        return make_error_tuple(env, "invalid_variable");
+    }
+
+    if (var_res->var != NULL) {
+        dpiVar_release(var_res->var);
+        var_res->var = NULL;
+        var_res->data = NULL;
+    }
+
+    return ATOM_OK;
+}
+
+// ============================================================
 // NIF Registration
 // ============================================================
 
@@ -1436,7 +2112,21 @@ static ErlNifFunc nif_funcs[] = {
     {"stmt_bind_value_by_name", 4, nif_stmt_bind_value_by_name, 0},
     {"stmt_get_bind_names", 1, nif_stmt_get_bind_names, 0},
     {"stmt_close", 1, nif_stmt_close, 0},
-    {"stmt_define_as_bytes", 3, nif_stmt_define_as_bytes, 0}
+    {"stmt_define_as_bytes", 3, nif_stmt_define_as_bytes, 0},
+    // Variable functions (for batch/array operations)
+    {"conn_new_var", 5, nif_conn_new_var, 0},
+    {"var_set_num_elements", 2, nif_var_set_num_elements, 0},
+    {"var_get_num_elements", 1, nif_var_get_num_elements, 0},
+    {"var_set_from_bytes", 3, nif_var_set_from_bytes, 0},
+    {"var_set_from_int", 3, nif_var_set_from_int, 0},
+    {"var_set_from_double", 3, nif_var_set_from_double, 0},
+    {"var_set_null", 2, nif_var_set_null, 0},
+    {"var_get_returned_data", 2, nif_var_get_returned_data, 0},
+    {"var_get_value", 2, nif_var_get_value, 0},
+    {"var_release", 1, nif_var_release, 0},
+    {"stmt_bind_by_pos", 3, nif_stmt_bind_by_pos, 0},
+    {"stmt_bind_by_name", 3, nif_stmt_bind_by_name, 0},
+    {"stmt_execute_many", 2, nif_stmt_execute_many, ERL_NIF_DIRTY_JOB_IO_BOUND}
 };
 
 // on_load callback - initialize resources and atoms
@@ -1489,6 +2179,19 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     );
 
     if (STATEMENT_RESOURCE_TYPE == NULL) {
+        return -1;
+    }
+
+    VARIABLE_RESOURCE_TYPE = enif_open_resource_type(
+        env,
+        NULL,
+        "inexora_variable",
+        variable_destructor,
+        ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER,
+        NULL
+    );
+
+    if (VARIABLE_RESOURCE_TYPE == NULL) {
         return -1;
     }
 

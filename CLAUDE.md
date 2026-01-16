@@ -134,6 +134,8 @@
 - [core] Result set fetching with column metadata
 - [core] Parameter binding with positional placeholders (:1, :2, etc.)
 - [core] Named parameter binding (:name style) with map params
+- [core] Batch/array binding via Variable API (`conn_new_var`, `stmt_execute_many`)
+- [core] RETURNING INTO support via `var_get_returned_data`
 - [datatype] VARCHAR2/CHAR → binary (String)
 - [datatype] NUMBER → Decimal (with full precision)
 - [datatype] DATE → Date
@@ -155,12 +157,11 @@
 - None
 
 **TODO/Upcoming**:
-- [core] OUT bind support for RETURNING INTO clauses (DPI_MODE_OUT)
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
 - [core] Cursor/streaming support for large result sets
-- [core] Batch/array operations
 - [ecto] Implement Ecto migrations (runtime testing)
+- [ecto] Integrate batch/array binding into Ecto Repo for bulk insert support
 
 ---
 
