@@ -825,6 +825,8 @@ defmodule Ecto.Adapters.Oracle.Connection do
   defp ecto_to_db(:float), do: "BINARY_DOUBLE"
   defp ecto_to_db(:binary_float), do: "BINARY_FLOAT"
   defp ecto_to_db(:binary_double), do: "BINARY_DOUBLE"
+  defp ecto_to_db(:interval_day_to_second), do: "INTERVAL DAY TO SECOND"
+  defp ecto_to_db(:interval_year_to_month), do: "INTERVAL YEAR TO MONTH"
   defp ecto_to_db(:decimal), do: "NUMBER"
   defp ecto_to_db(:boolean), do: "NUMBER(1)"
   defp ecto_to_db(:date), do: "DATE"

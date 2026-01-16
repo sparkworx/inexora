@@ -749,6 +749,29 @@ static ERL_NIF_TERM nif_stmt_get_query_value(ErlNifEnv *env, int argc, const ERL
             }
             break;
         }
+        case DPI_NATIVE_TYPE_INTERVAL_DS: {
+            // Return as tuple {:interval_ds, days, hours, minutes, seconds, fseconds}
+            dpiIntervalDS *interval = &data->value.asIntervalDS;
+            value = enif_make_tuple6(env,
+                enif_make_atom(env, "interval_ds"),
+                enif_make_int(env, interval->days),
+                enif_make_int(env, interval->hours),
+                enif_make_int(env, interval->minutes),
+                enif_make_int(env, interval->seconds),
+                enif_make_int(env, interval->fseconds)
+            );
+            break;
+        }
+        case DPI_NATIVE_TYPE_INTERVAL_YM: {
+            // Return as tuple {:interval_ym, years, months}
+            dpiIntervalYM *interval = &data->value.asIntervalYM;
+            value = enif_make_tuple3(env,
+                enif_make_atom(env, "interval_ym"),
+                enif_make_int(env, interval->years),
+                enif_make_int(env, interval->months)
+            );
+            break;
+        }
         default:
             // For unsupported types, return raw bytes if possible or nil
             return make_error_tuple(env, "unsupported_type");
@@ -911,6 +934,86 @@ static ERL_NIF_TERM nif_stmt_bind_value_by_pos(ErlNifEnv *env, int argc, const E
 
         // Note: We don't release the var here as it needs to stay valid until execute
         // It will be released when the statement is closed
+        return ATOM_OK;
+    }
+    else if (strcmp(type_str, "interval_ds") == 0) {
+        // Bind INTERVAL DAY TO SECOND
+        // Expect tuple {days, hours, minutes, seconds, fseconds}
+        int arity;
+        const ERL_NIF_TERM *tuple;
+        if (!enif_get_tuple(env, argv[3], &arity, &tuple) || arity != 5) {
+            return make_error_tuple(env, "invalid_interval_ds");
+        }
+
+        int days, hours, minutes, seconds, fseconds;
+        if (!enif_get_int(env, tuple[0], &days) ||
+            !enif_get_int(env, tuple[1], &hours) ||
+            !enif_get_int(env, tuple[2], &minutes) ||
+            !enif_get_int(env, tuple[3], &seconds) ||
+            !enif_get_int(env, tuple[4], &fseconds)) {
+            return make_error_tuple(env, "invalid_interval_ds_values");
+        }
+
+        dpiVar *var;
+        dpiData *varData;
+        if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_INTERVAL_DS, DPI_NATIVE_TYPE_INTERVAL_DS,
+                           1, 0, 0, 0, NULL, &var, &varData) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        varData->isNull = 0;
+        varData->value.asIntervalDS.days = days;
+        varData->value.asIntervalDS.hours = hours;
+        varData->value.asIntervalDS.minutes = minutes;
+        varData->value.asIntervalDS.seconds = seconds;
+        varData->value.asIntervalDS.fseconds = fseconds;
+
+        if (dpiStmt_bindByPos(stmt_res->stmt, pos, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        return ATOM_OK;
+    }
+    else if (strcmp(type_str, "interval_ym") == 0) {
+        // Bind INTERVAL YEAR TO MONTH
+        // Expect tuple {years, months}
+        int arity;
+        const ERL_NIF_TERM *tuple;
+        if (!enif_get_tuple(env, argv[3], &arity, &tuple) || arity != 2) {
+            return make_error_tuple(env, "invalid_interval_ym");
+        }
+
+        int years, months;
+        if (!enif_get_int(env, tuple[0], &years) ||
+            !enif_get_int(env, tuple[1], &months)) {
+            return make_error_tuple(env, "invalid_interval_ym_values");
+        }
+
+        dpiVar *var;
+        dpiData *varData;
+        if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_INTERVAL_YM, DPI_NATIVE_TYPE_INTERVAL_YM,
+                           1, 0, 0, 0, NULL, &var, &varData) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        varData->isNull = 0;
+        varData->value.asIntervalYM.years = years;
+        varData->value.asIntervalYM.months = months;
+
+        if (dpiStmt_bindByPos(stmt_res->stmt, pos, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
         return ATOM_OK;
     }
     else {

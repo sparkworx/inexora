@@ -141,6 +141,8 @@
 - [datatype] BLOB → binary (raw)
 - [datatype] RAW/LONG RAW → binary (using `{:raw, binary}` wrapper for binding)
 - [datatype] BINARY_FLOAT/BINARY_DOUBLE → float
+- [datatype] INTERVAL DAY TO SECOND → `{:interval_ds, days, hours, minutes, seconds, fseconds}`
+- [datatype] INTERVAL YEAR TO MONTH → `{:interval_ym, years, months}`
 - [datatype] NULL handling
 - [ecto] Ecto adapter (`Ecto.Adapters.Oracle`)
 - [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
@@ -151,7 +153,6 @@
 - None
 
 **TODO/Upcoming**:
-- [datatype] INTERVAL types
 - [core] Cursor/streaming support for large result sets
 - [core] Named parameter binding (:name style)
 - [core] Batch/array operations

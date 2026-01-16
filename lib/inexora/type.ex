@@ -24,6 +24,8 @@ defmodule Inexora.Type do
   @oracle_type_binary_double 2008
   @oracle_type_rowid 2005
   @oracle_type_boolean 2022
+  @oracle_type_interval_ds 2015
+  @oracle_type_interval_ym 2016
 
   @doc """
   Converts a value from the NIF to an Elixir-friendly format.
@@ -107,6 +109,16 @@ defmodule Inexora.Type do
     end
   end
 
+  defp convert_from_oracle(value, @oracle_type_interval_ds) do
+    # INTERVAL DAY TO SECOND comes as {:interval_ds, days, hours, minutes, seconds, fseconds}
+    value
+  end
+
+  defp convert_from_oracle(value, @oracle_type_interval_ym) do
+    # INTERVAL YEAR TO MONTH comes as {:interval_ym, years, months}
+    value
+  end
+
   defp convert_from_oracle(value, _oracle_type), do: value
 
   @doc """
@@ -118,6 +130,8 @@ defmodule Inexora.Type do
   @spec type_hint(term()) :: atom()
   def type_hint(nil), do: :integer
   def type_hint({:raw, _}), do: :raw
+  def type_hint({:interval_ds, _d, _h, _m, _s, _fs}), do: :interval_ds
+  def type_hint({:interval_ym, _y, _m}), do: :interval_ym
   def type_hint(value) when is_boolean(value), do: :integer
   def type_hint(value) when is_integer(value), do: :integer
   def type_hint(value) when is_float(value), do: :float
@@ -138,6 +152,8 @@ defmodule Inexora.Type do
   def encode({:raw, binary}) when is_binary(binary), do: binary
   def encode({:raw, nil}), do: nil
   def encode({:raw, :null}), do: nil
+  def encode({:interval_ds, d, h, m, s, fs}), do: {d, h, m, s, fs}
+  def encode({:interval_ym, y, m}), do: {y, m}
   def encode(value) when is_integer(value), do: value
   def encode(value) when is_float(value), do: value
   def encode(value) when is_binary(value), do: value
@@ -202,6 +218,17 @@ defmodule Inexora.Type do
     oracle_type in [
       @oracle_type_binary_float,
       @oracle_type_binary_double
+    ]
+  end
+
+  @doc """
+  Returns true if the Oracle type represents an interval type.
+  """
+  @spec interval_type?(non_neg_integer()) :: boolean()
+  def interval_type?(oracle_type) do
+    oracle_type in [
+      @oracle_type_interval_ds,
+      @oracle_type_interval_ym
     ]
   end
 end
