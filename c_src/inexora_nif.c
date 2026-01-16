@@ -2083,6 +2083,163 @@ static ERL_NIF_TERM nif_var_release(ErlNifEnv *env, int argc, const ERL_NIF_TERM
 }
 
 // ============================================================
+// Cursor/Streaming Functions
+// ============================================================
+
+// Fetch multiple rows at once
+// stmt_fetch_rows(stmt, max_rows) -> {:ok, {rows_fetched, more_rows}} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_fetch_rows(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int max_rows;
+    if (!enif_get_uint(env, argv[1], &max_rows) || max_rows == 0) {
+        return make_error_tuple(env, "invalid_max_rows");
+    }
+
+    uint32_t bufferRowIndex;
+    uint32_t numRowsFetched;
+    int moreRows;
+
+    if (dpiStmt_fetchRows(stmt_res->stmt, max_rows, &bufferRowIndex, &numRowsFetched, &moreRows) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Return {rows_fetched, buffer_row_index, more_rows}
+    ERL_NIF_TERM result = enif_make_tuple3(env,
+        enif_make_uint(env, numRowsFetched),
+        enif_make_uint(env, bufferRowIndex),
+        moreRows ? ATOM_TRUE : ATOM_FALSE);
+
+    return make_ok_tuple(env, result);
+}
+
+// Set the internal array size used for fetching
+// stmt_set_fetch_array_size(stmt, size) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_set_fetch_array_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int array_size;
+    if (!enif_get_uint(env, argv[1], &array_size) || array_size == 0) {
+        return make_error_tuple(env, "invalid_array_size");
+    }
+
+    if (dpiStmt_setFetchArraySize(stmt_res->stmt, array_size) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Get the internal array size used for fetching
+// stmt_get_fetch_array_size(stmt) -> {:ok, size} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_fetch_array_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    uint32_t array_size;
+    if (dpiStmt_getFetchArraySize(stmt_res->stmt, &array_size) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return make_ok_tuple(env, enif_make_uint(env, array_size));
+}
+
+// Set the number of rows to prefetch
+// stmt_set_prefetch_rows(stmt, num_rows) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_set_prefetch_rows(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int num_rows;
+    if (!enif_get_uint(env, argv[1], &num_rows)) {
+        return make_error_tuple(env, "invalid_num_rows");
+    }
+
+    if (dpiStmt_setPrefetchRows(stmt_res->stmt, num_rows) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Get the number of rows being prefetched
+// stmt_get_prefetch_rows(stmt) -> {:ok, num_rows} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_prefetch_rows(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    uint32_t num_rows;
+    if (dpiStmt_getPrefetchRows(stmt_res->stmt, &num_rows) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return make_ok_tuple(env, enif_make_uint(env, num_rows));
+}
+
+
+// ============================================================
 // NIF Registration
 // ============================================================
 
@@ -2126,7 +2283,13 @@ static ErlNifFunc nif_funcs[] = {
     {"var_release", 1, nif_var_release, 0},
     {"stmt_bind_by_pos", 3, nif_stmt_bind_by_pos, 0},
     {"stmt_bind_by_name", 3, nif_stmt_bind_by_name, 0},
-    {"stmt_execute_many", 2, nif_stmt_execute_many, ERL_NIF_DIRTY_JOB_IO_BOUND}
+    {"stmt_execute_many", 2, nif_stmt_execute_many, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    // Cursor/streaming functions
+    {"stmt_fetch_rows", 2, nif_stmt_fetch_rows, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"stmt_set_fetch_array_size", 2, nif_stmt_set_fetch_array_size, 0},
+    {"stmt_get_fetch_array_size", 1, nif_stmt_get_fetch_array_size, 0},
+    {"stmt_set_prefetch_rows", 2, nif_stmt_set_prefetch_rows, 0},
+    {"stmt_get_prefetch_rows", 1, nif_stmt_get_prefetch_rows, 0}
 };
 
 // on_load callback - initialize resources and atoms

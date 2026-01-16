@@ -45,8 +45,10 @@ defmodule Ecto.Adapters.Oracle.Connection do
   end
 
   @impl true
-  def stream(_conn, _sql, _params, _opts) do
-    raise "streaming is not yet supported by Oracle adapter"
+  def stream(conn, sql, params, opts) do
+    query = %Inexora.Query{sql: sql, statement: nil}
+    # Use DBConnection.stream for cursor-based streaming
+    DBConnection.stream(conn, query, params, opts)
   end
 
   # ============================================================

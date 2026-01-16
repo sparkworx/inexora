@@ -154,6 +154,8 @@
 - [ecto] Integration tests with Ecto Repo
 - [ecto] Bulk insert via `insert_all` using Oracle's `INSERT ALL` syntax
 - [ecto] High-level batch operations via `Inexora.Batch` module
+- [core] Cursor/streaming support for large result sets (`Inexora.Cursor`, DBConnection cursor callbacks)
+- [core] Cursor NIF functions (`stmt_fetch_rows`, `stmt_set_fetch_array_size`, `stmt_set_prefetch_rows`)
 
 **In Progress**:
 - None
@@ -161,7 +163,6 @@
 **TODO/Upcoming**:
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
-- [core] Cursor/streaming support for large result sets
 - [ecto] Implement Ecto migrations (runtime testing)
 - [ecto] Batch insert_all with RETURNING (requires special adapter handling)
 

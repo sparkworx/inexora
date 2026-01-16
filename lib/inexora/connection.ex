@@ -211,19 +211,103 @@ defmodule Inexora.Connection do
   end
 
   @impl DBConnection
-  def handle_declare(_query, _params, _opts, state) do
-    # Cursors not yet supported
-    {:error, Error.from_odpi("cursors not implemented"), state}
+  def handle_declare(%Query{sql: sql} = query, params, opts, %__MODULE__{conn: conn} = state) do
+    # Ensure SQL is a binary
+    sql_binary = IO.iodata_to_binary(sql)
+    max_rows = Keyword.get(opts, :max_rows, 100)
+
+    with {:ok, stmt} <- Nif.stmt_prepare(conn, sql_binary),
+         :ok <- bind_params(stmt, params),
+         :ok <- configure_cursor(stmt, opts),
+         {:ok, num_columns} <- Nif.stmt_execute(stmt) do
+      if num_columns > 0 do
+        # Get column metadata
+        columns =
+          for pos <- 1..num_columns do
+            case Nif.stmt_get_query_info(stmt, pos) do
+              {:ok, info} -> info
+              {:error, _} -> %{name: "col_#{pos}"}
+            end
+          end
+
+        cursor = %{
+          stmt: stmt,
+          columns: columns,
+          num_columns: num_columns,
+          max_rows: max_rows,
+          done: false
+        }
+
+        {:ok, %{query | statement: stmt, num_columns: num_columns, columns: columns}, cursor, state}
+      else
+        Nif.stmt_close(stmt)
+        {:error, Error.from_odpi("not a query - no columns returned"), state}
+      end
+    else
+      {:error, reason} ->
+        {:error, Error.from_odpi(reason), state}
+    end
   end
 
   @impl DBConnection
-  def handle_fetch(_query, _cursor, _opts, state) do
-    {:error, Error.from_odpi("cursors not implemented"), state}
+  def handle_fetch(_query, %{done: true} = cursor, _opts, state) do
+    {:halt, [], cursor, state}
+  end
+
+  def handle_fetch(_query, %{stmt: stmt, num_columns: num_columns, columns: columns, max_rows: max_rows} = cursor, _opts, state) do
+    case Nif.stmt_fetch_rows(stmt, max_rows) do
+      {:ok, {0, _buffer_idx, _more}} ->
+        {:halt, [], %{cursor | done: true}, state}
+
+      {:ok, {rows_fetched, _buffer_idx, more}} ->
+        rows = fetch_cursor_rows(stmt, num_columns, columns, rows_fetched)
+        done = not more or rows_fetched == 0
+
+        if done do
+          {:halt, rows, %{cursor | done: true}, state}
+        else
+          {:cont, rows, cursor, state}
+        end
+
+      {:error, reason} ->
+        {:error, Error.from_odpi(reason), state}
+    end
   end
 
   @impl DBConnection
+  def handle_deallocate(_query, %{stmt: stmt}, _opts, state) when is_reference(stmt) do
+    Nif.stmt_close(stmt)
+    {:ok, nil, state}
+  end
+
   def handle_deallocate(_query, _cursor, _opts, state) do
     {:ok, nil, state}
+  end
+
+  defp configure_cursor(stmt, opts) do
+    fetch_array_size = Keyword.get(opts, :fetch_array_size, 100)
+    prefetch_rows = Keyword.get(opts, :prefetch_rows, 2)
+
+    with :ok <- Nif.stmt_set_fetch_array_size(stmt, fetch_array_size),
+         :ok <- Nif.stmt_set_prefetch_rows(stmt, prefetch_rows) do
+      :ok
+    end
+  end
+
+  defp fetch_cursor_rows(stmt, num_columns, columns, rows_to_fetch) do
+    for _row_idx <- 1..rows_to_fetch do
+      case Nif.stmt_fetch(stmt) do
+        {:ok, true} ->
+          fetch_row_values(stmt, num_columns, columns)
+
+        {:ok, :done} ->
+          nil
+
+        {:error, _} ->
+          nil
+      end
+    end
+    |> Enum.reject(&is_nil/1)
   end
 
   # ============================================================

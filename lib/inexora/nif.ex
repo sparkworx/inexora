@@ -489,4 +489,88 @@ defmodule Inexora.Nif do
   """
   @spec stmt_execute_many(stmt(), pos_integer()) :: {:ok, non_neg_integer()} | {:error, reason()}
   def stmt_execute_many(_stmt, _num_iters), do: :erlang.nif_error(:not_loaded)
+
+  # ============================================================
+  # Cursor/Streaming Functions
+  # ============================================================
+
+  @doc """
+  Fetches multiple rows at once (batch fetch).
+
+  More efficient than row-by-row fetching for large result sets.
+
+  ## Parameters
+
+    * `stmt` - Statement reference (after execute)
+    * `max_rows` - Maximum number of rows to fetch in this batch
+
+  ## Returns
+
+    `{:ok, {rows_fetched, buffer_row_index, more_rows}}` where:
+    - `rows_fetched` - Actual number of rows fetched (0-based count)
+    - `buffer_row_index` - Starting index in the internal buffer
+    - `more_rows` - `true` if more rows available, `false` if at end
+
+  ## Example
+
+      {:ok, num_cols} = Nif.stmt_execute(stmt)
+      {:ok, {count, start_idx, more?}} = Nif.stmt_fetch_rows(stmt, 100)
+      # Fetch values for rows start_idx to start_idx + count - 1
+  """
+  @spec stmt_fetch_rows(stmt(), pos_integer()) ::
+          {:ok, {non_neg_integer(), non_neg_integer(), boolean()}} | {:error, reason()}
+  def stmt_fetch_rows(_stmt, _max_rows), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets the internal array size used for fetching.
+
+  This controls how many rows are fetched from the database in each round-trip.
+  Larger values use more memory but reduce network overhead for large result sets.
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `size` - Array size (default is typically 100)
+
+  ## Example
+
+      :ok = Nif.stmt_set_fetch_array_size(stmt, 1000)  # Fetch 1000 rows per batch
+  """
+  @spec stmt_set_fetch_array_size(stmt(), pos_integer()) :: :ok | {:error, reason()}
+  def stmt_set_fetch_array_size(_stmt, _size), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the current internal array size used for fetching.
+
+  ## Returns
+
+    `{:ok, size}` - Current array size
+  """
+  @spec stmt_get_fetch_array_size(stmt()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def stmt_get_fetch_array_size(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Sets the number of rows to prefetch from the Oracle client library.
+
+  This is a separate setting from the fetch array size. Prefetch controls
+  how many rows the Oracle client library fetches ahead.
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `num_rows` - Number of rows to prefetch (0 to disable)
+  """
+  @spec stmt_set_prefetch_rows(stmt(), non_neg_integer()) :: :ok | {:error, reason()}
+  def stmt_set_prefetch_rows(_stmt, _num_rows), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the current number of rows being prefetched.
+
+  ## Returns
+
+    `{:ok, num_rows}` - Current prefetch setting
+  """
+  @spec stmt_get_prefetch_rows(stmt()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def stmt_get_prefetch_rows(_stmt), do: :erlang.nif_error(:not_loaded)
+
 end
