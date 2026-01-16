@@ -151,9 +151,12 @@ defmodule Inexora.Connection do
 
   @impl DBConnection
   def handle_prepare(%Query{sql: sql} = query, _opts, %__MODULE__{conn: conn} = state) do
-    case Nif.stmt_prepare(conn, sql) do
+    # Ensure SQL is a binary (Ecto adapters often return iodata)
+    sql_binary = IO.iodata_to_binary(sql)
+
+    case Nif.stmt_prepare(conn, sql_binary) do
       {:ok, stmt} ->
-        {:ok, %{query | statement: stmt}, state}
+        {:ok, %{query | statement: stmt, sql: sql_binary}, state}
 
       {:error, reason} ->
         {:error, Error.from_odpi(reason), state}
@@ -162,6 +165,11 @@ defmodule Inexora.Connection do
 
   def handle_prepare(sql, opts, state) when is_binary(sql) do
     handle_prepare(Query.new(sql), opts, state)
+  end
+
+  def handle_prepare(sql, opts, state) when is_list(sql) do
+    # Handle iodata (list) SQL
+    handle_prepare(Query.new(IO.iodata_to_binary(sql)), opts, state)
   end
 
   @impl DBConnection

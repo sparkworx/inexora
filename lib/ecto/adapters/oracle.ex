@@ -36,6 +36,31 @@ defmodule Ecto.Adapters.Oracle do
 
   @behaviour Ecto.Adapter.Storage
 
+  # Oracle stores booleans as NUMBER(1), so we need to convert
+  @impl Ecto.Adapter
+  def dumpers(:boolean, type), do: [type, &bool_encode/1]
+  def dumpers(:binary_id, type), do: [type, Ecto.UUID]
+  def dumpers(_primitive, type), do: [type]
+
+  defp bool_encode(true), do: {:ok, 1}
+  defp bool_encode(false), do: {:ok, 0}
+
+  @impl Ecto.Adapter
+  def loaders(:boolean, type), do: [&bool_decode/1, type]
+  def loaders(:binary_id, type), do: [Ecto.UUID, type]
+  def loaders(:integer, type), do: [&integer_decode/1, type]
+  def loaders(:id, type), do: [&integer_decode/1, type]
+  def loaders(_primitive, type), do: [type]
+
+  defp bool_decode(1), do: {:ok, true}
+  defp bool_decode(0), do: {:ok, false}
+  defp bool_decode(%Decimal{} = d), do: {:ok, Decimal.compare(d, 0) != :eq}
+  defp bool_decode(nil), do: {:ok, nil}
+
+  defp integer_decode(%Decimal{} = d), do: {:ok, Decimal.to_integer(d)}
+  defp integer_decode(i) when is_integer(i), do: {:ok, i}
+  defp integer_decode(nil), do: {:ok, nil}
+
   @impl Ecto.Adapter.Storage
   def storage_up(_opts) do
     # Oracle databases are typically created by DBAs

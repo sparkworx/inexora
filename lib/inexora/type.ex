@@ -91,6 +91,7 @@ defmodule Inexora.Type do
   """
   @spec type_hint(term()) :: atom()
   def type_hint(nil), do: :integer
+  def type_hint(value) when is_boolean(value), do: :integer
   def type_hint(value) when is_integer(value), do: :integer
   def type_hint(value) when is_float(value), do: :float
   def type_hint(value) when is_binary(value), do: :string
@@ -105,6 +106,8 @@ defmodule Inexora.Type do
   """
   @spec encode(term()) :: term()
   def encode(nil), do: nil
+  def encode(true), do: 1
+  def encode(false), do: 0
   def encode(value) when is_integer(value), do: value
   def encode(value) when is_float(value), do: value
   def encode(value) when is_binary(value), do: value
