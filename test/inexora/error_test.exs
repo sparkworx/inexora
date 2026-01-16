@@ -8,6 +8,8 @@ defmodule Inexora.ErrorTest do
 
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Connection
   alias Inexora.Query
   alias Inexora.Error
@@ -406,14 +408,4 @@ defmodule Inexora.ErrorTest do
     end
   end
 
-  # Helper to connect to test database
-  defp connect_test_db do
-    opts = [
-      username: System.get_env("ORACLE_USER", "test_user"),
-      password: System.get_env("ORACLE_PASSWORD", "test_password"),
-      database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-    ]
-
-    Connection.connect(opts)
-  end
 end

@@ -1,6 +1,8 @@
 defmodule Ecto.Adapters.OracleIntegrationTest do
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   @moduletag :oracle_database
   @moduletag :ecto_integration
 
@@ -23,12 +25,7 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
   end
 
   setup_all do
-    opts = [
-      username: System.get_env("ORACLE_USER", "inexora"),
-      password: System.get_env("ORACLE_PASSWORD", "Welcome4321"),
-      database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1"),
-      pool_size: 1
-    ]
+    opts = Keyword.put(test_connection_opts(), :pool_size, 1)
 
     Application.put_env(:inexora, TestRepo, opts)
 

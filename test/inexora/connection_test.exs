@@ -1,19 +1,15 @@
 defmodule Inexora.ConnectionTest do
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Connection
   alias Inexora.Error
 
   describe "connect/1" do
     @tag :oracle_database
     test "connects with valid credentials" do
-      opts = [
-        username: System.get_env("ORACLE_USER", "test_user"),
-        password: System.get_env("ORACLE_PASSWORD", "test_password"),
-        database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-      ]
-
-      case Connection.connect(opts) do
+      case Connection.connect(test_connection_opts()) do
         {:ok, state} ->
           assert is_reference(state.conn)
           assert is_reference(state.context)
@@ -160,14 +156,4 @@ defmodule Inexora.ConnectionTest do
     end
   end
 
-  # Helper to connect to test database
-  defp connect_test_db do
-    opts = [
-      username: System.get_env("ORACLE_USER", "test_user"),
-      password: System.get_env("ORACLE_PASSWORD", "test_password"),
-      database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-    ]
-
-    Connection.connect(opts)
-  end
 end

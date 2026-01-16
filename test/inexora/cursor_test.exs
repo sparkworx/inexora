@@ -1,22 +1,14 @@
 defmodule Inexora.CursorTest do
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Connection
   alias Inexora.Cursor
   alias Inexora.Nif
   alias Inexora.Query
 
   @moduletag :oracle_database
-
-  defp connect_test_db do
-    opts = [
-      username: System.get_env("ORACLE_USER", "inexora"),
-      password: System.get_env("ORACLE_PASSWORD", "Welcome4321"),
-      database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-    ]
-
-    Connection.connect(opts)
-  end
 
   describe "cursor open/fetch/close" do
     test "opens cursor for SELECT query" do

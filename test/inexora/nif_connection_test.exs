@@ -2,6 +2,8 @@ defmodule Inexora.NifConnectionTest do
   # async: false to avoid Oracle client concurrency issues
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Nif
 
   describe "conn_create/4" do
@@ -9,9 +11,10 @@ defmodule Inexora.NifConnectionTest do
     test "creates connection with valid credentials" do
       {:ok, ctx} = Nif.context_create()
 
-      username = System.get_env("ORACLE_USER", "test_user")
-      password = System.get_env("ORACLE_PASSWORD", "test_password")
-      database = System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
+      opts = test_connection_opts()
+      username = Keyword.fetch!(opts, :username)
+      password = Keyword.fetch!(opts, :password)
+      database = Keyword.fetch!(opts, :database)
 
       case Nif.conn_create(ctx, username, password, database) do
         {:ok, conn} ->
@@ -102,9 +105,10 @@ defmodule Inexora.NifConnectionTest do
 
   # Helper
   defp create_test_connection(ctx) do
-    username = System.get_env("ORACLE_USER", "test_user")
-    password = System.get_env("ORACLE_PASSWORD", "test_password")
-    database = System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
+    opts = test_connection_opts()
+    username = Keyword.fetch!(opts, :username)
+    password = Keyword.fetch!(opts, :password)
+    database = Keyword.fetch!(opts, :database)
     Nif.conn_create(ctx, username, password, database)
   end
 end

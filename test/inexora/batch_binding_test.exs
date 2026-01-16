@@ -11,31 +11,14 @@ defmodule Inexora.BatchBindingTest do
 
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Nif
-
-  # Helper to connect to test database
-  defp connect_test_db do
-    {:ok, ctx} = Nif.context_create()
-
-    username = System.get_env("ORACLE_USER", "test_user")
-    password = System.get_env("ORACLE_PASSWORD", "test_password")
-    database = System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-
-    case Nif.conn_create(ctx, username, password, database) do
-      {:ok, conn} -> {:ok, ctx, conn}
-      {:error, _} = error -> error
-    end
-  end
-
-  defp cleanup(ctx, conn) do
-    Nif.conn_close(conn)
-    Nif.context_destroy(ctx)
-  end
 
   describe "conn_new_var/5" do
     @tag :oracle_database
     test "creates a varchar variable" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         # Create variable for 5 strings, each up to 100 chars
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
@@ -43,54 +26,54 @@ defmodule Inexora.BatchBindingTest do
 
         # Cleanup
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "creates a number variable with int64 native type" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :number, :int64, 10, 0)
 
         assert is_reference(var)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "creates a number variable with bytes native type" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         # NUMBER as bytes for decimal precision
         {:ok, var} = Nif.conn_new_var(conn, :number, :bytes, 10, 50)
 
         assert is_reference(var)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "returns error for invalid oracle type" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         result = Nif.conn_new_var(conn, :invalid_type, :bytes, 10, 100)
 
         assert {:error, "unsupported_oracle_type"} = result
 
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "returns error for invalid native type" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         result = Nif.conn_new_var(conn, :varchar, :invalid_native, 10, 100)
 
         assert {:error, "unsupported_native_type"} = result
 
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -98,19 +81,19 @@ defmodule Inexora.BatchBindingTest do
   describe "var_set_num_elements/2" do
     @tag :oracle_database
     test "sets number of elements in array" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 10, 100)
 
         assert :ok = Nif.var_set_num_elements(var, 5)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "returns error when exceeding max array size" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         result = Nif.var_set_num_elements(var, 10)
@@ -118,7 +101,7 @@ defmodule Inexora.BatchBindingTest do
         assert {:error, "num_elements_exceeds_max_array_size"} = result
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -126,7 +109,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_get_num_elements/1" do
     @tag :oracle_database
     test "gets number of elements in array" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 10, 100)
 
         :ok = Nif.var_set_num_elements(var, 5)
@@ -135,7 +118,7 @@ defmodule Inexora.BatchBindingTest do
         assert count == 5
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -143,7 +126,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_set_from_bytes/3" do
     @tag :oracle_database
     test "sets bytes values at array positions" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         assert :ok = Nif.var_set_from_bytes(var, 0, "first")
@@ -151,13 +134,13 @@ defmodule Inexora.BatchBindingTest do
         assert :ok = Nif.var_set_from_bytes(var, 2, "third")
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "returns error for out of bounds position" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         result = Nif.var_set_from_bytes(var, 10, "out of bounds")
@@ -165,7 +148,7 @@ defmodule Inexora.BatchBindingTest do
         assert {:error, "position_out_of_bounds"} = result
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -173,7 +156,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_set_from_int/3" do
     @tag :oracle_database
     test "sets integer values at array positions" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :native_int, :int64, 5, 0)
 
         assert :ok = Nif.var_set_from_int(var, 0, 100)
@@ -181,7 +164,7 @@ defmodule Inexora.BatchBindingTest do
         assert :ok = Nif.var_set_from_int(var, 2, -300)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -189,7 +172,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_set_from_double/3" do
     @tag :oracle_database
     test "sets double values at array positions" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :native_double, :double, 5, 0)
 
         assert :ok = Nif.var_set_from_double(var, 0, 3.14)
@@ -198,7 +181,7 @@ defmodule Inexora.BatchBindingTest do
         assert :ok = Nif.var_set_from_double(var, 2, 42)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -206,14 +189,14 @@ defmodule Inexora.BatchBindingTest do
   describe "var_set_null/2" do
     @tag :oracle_database
     test "sets NULL at array position" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         assert :ok = Nif.var_set_from_bytes(var, 0, "not null")
         assert :ok = Nif.var_set_null(var, 1)
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -221,7 +204,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_get_value/2" do
     @tag :oracle_database
     test "gets value at array position after setting bytes" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         :ok = Nif.var_set_from_bytes(var, 0, "test_value")
@@ -230,13 +213,13 @@ defmodule Inexora.BatchBindingTest do
         assert value == "test_value"
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "gets nil for NULL value" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         :ok = Nif.var_set_null(var, 0)
@@ -245,13 +228,13 @@ defmodule Inexora.BatchBindingTest do
         assert value == nil
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "gets integer value at array position" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :native_int, :int64, 5, 0)
 
         :ok = Nif.var_set_from_int(var, 0, 12345)
@@ -260,7 +243,7 @@ defmodule Inexora.BatchBindingTest do
         assert value == 12345
 
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -268,7 +251,7 @@ defmodule Inexora.BatchBindingTest do
   describe "stmt_bind_by_pos/3" do
     @tag :oracle_database
     test "binds variable by position" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, stmt} = Nif.stmt_prepare(conn, "SELECT :1 FROM dual")
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 1, 100)
 
@@ -285,7 +268,7 @@ defmodule Inexora.BatchBindingTest do
 
         Nif.stmt_close(stmt)
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -293,7 +276,7 @@ defmodule Inexora.BatchBindingTest do
   describe "stmt_bind_by_name/3" do
     @tag :oracle_database
     test "binds variable by name" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, stmt} = Nif.stmt_prepare(conn, "SELECT :VAL FROM dual")
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 1, 100)
 
@@ -310,7 +293,7 @@ defmodule Inexora.BatchBindingTest do
 
         Nif.stmt_close(stmt)
         Nif.var_release(var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -318,7 +301,7 @@ defmodule Inexora.BatchBindingTest do
   describe "stmt_execute_many/2 batch insert" do
     @tag :oracle_database
     test "inserts multiple rows in one batch" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         # Create a temporary table for testing
         {:ok, create_stmt} = Nif.stmt_prepare(conn, """
           DECLARE
@@ -384,7 +367,7 @@ defmodule Inexora.BatchBindingTest do
 
         Nif.var_release(id_var)
         Nif.var_release(name_var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -392,7 +375,7 @@ defmodule Inexora.BatchBindingTest do
   describe "RETURNING INTO clause" do
     @tag :oracle_database
     test "retrieves returned values from INSERT RETURNING" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         # Create a temporary table with a sequence-like column
         {:ok, create_stmt} = Nif.stmt_prepare(conn, """
           DECLARE
@@ -447,13 +430,13 @@ defmodule Inexora.BatchBindingTest do
 
         Nif.var_release(name_var)
         Nif.var_release(id_var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "retrieves multiple returned values from batch INSERT RETURNING" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         # Create a temporary table with identity column
         {:ok, create_stmt} = Nif.stmt_prepare(conn, """
           DECLARE
@@ -518,7 +501,7 @@ defmodule Inexora.BatchBindingTest do
 
         Nif.var_release(name_var)
         Nif.var_release(id_var)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -526,7 +509,7 @@ defmodule Inexora.BatchBindingTest do
   describe "var_release/1" do
     @tag :oracle_database
     test "releases a variable" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         assert :ok = Nif.var_release(var)
@@ -535,19 +518,19 @@ defmodule Inexora.BatchBindingTest do
         result = Nif.var_set_from_bytes(var, 0, "test")
         assert {:error, "variable_released"} = result
 
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "releasing twice is safe" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         {:ok, var} = Nif.conn_new_var(conn, :varchar, :bytes, 5, 100)
 
         assert :ok = Nif.var_release(var)
         assert :ok = Nif.var_release(var)
 
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end

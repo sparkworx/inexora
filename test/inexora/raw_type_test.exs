@@ -1,18 +1,14 @@
 defmodule Inexora.RawTypeTest do
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   @moduletag :oracle_database
 
   alias Inexora.{Connection, Query, Result}
 
   setup_all do
-    opts = [
-      username: System.get_env("ORACLE_USER", "inexora"),
-      password: System.get_env("ORACLE_PASSWORD", "Welcome4321"),
-      database: System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-    ]
-
-    {:ok, conn} = DBConnection.start_link(Connection, opts)
+    {:ok, conn} = DBConnection.start_link(Connection, test_connection_opts())
 
     # Create test table with RAW columns
     DBConnection.execute(conn, %Query{sql: """

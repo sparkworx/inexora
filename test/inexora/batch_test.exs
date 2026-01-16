@@ -9,27 +9,10 @@ defmodule Inexora.BatchTest do
 
   use ExUnit.Case, async: false
 
+  import Inexora.TestHelpers
+
   alias Inexora.Batch
   alias Inexora.Nif
-
-  # Helper to connect to test database
-  defp connect_test_db do
-    {:ok, ctx} = Nif.context_create()
-
-    username = System.get_env("ORACLE_USER", "test_user")
-    password = System.get_env("ORACLE_PASSWORD", "test_password")
-    database = System.get_env("ORACLE_DATABASE", "localhost:1521/FREEPDB1")
-
-    case Nif.conn_create(ctx, username, password, database) do
-      {:ok, conn} -> {:ok, ctx, conn}
-      {:error, _} = error -> error
-    end
-  end
-
-  defp cleanup(ctx, conn) do
-    Nif.conn_close(conn)
-    Nif.context_destroy(ctx)
-  end
 
   defp setup_test_table(conn) do
     {:ok, stmt} = Nif.stmt_prepare(conn, """
@@ -62,7 +45,7 @@ defmodule Inexora.BatchTest do
   describe "Batch.insert/4 with RETURNING" do
     @tag :oracle_database
     test "inserts multiple rows and returns generated IDs" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         :ok = setup_test_table(conn)
 
         sql = "INSERT INTO gtt_batch_module_test (name, age) VALUES (:1, :2) RETURNING id INTO :3"
@@ -91,13 +74,13 @@ defmodule Inexora.BatchTest do
         assert length(Enum.uniq(ids)) == 3
 
         drop_test_table(conn)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "handles empty rows list" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         :ok = setup_test_table(conn)
 
         sql = "INSERT INTO gtt_batch_module_test (name, age) VALUES (:1, :2) RETURNING id INTO :3"
@@ -109,13 +92,13 @@ defmodule Inexora.BatchTest do
         assert returned == []
 
         drop_test_table(conn)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "handles NULL values in batch insert" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         :ok = setup_test_table(conn)
 
         sql = "INSERT INTO gtt_batch_module_test (name, age) VALUES (:1, :2) RETURNING id INTO :3"
@@ -138,7 +121,7 @@ defmodule Inexora.BatchTest do
         end
 
         drop_test_table(conn)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
@@ -146,7 +129,7 @@ defmodule Inexora.BatchTest do
   describe "Batch.insert_all/3 without RETURNING" do
     @tag :oracle_database
     test "inserts multiple rows and returns count" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         :ok = setup_test_table(conn)
 
         sql = "INSERT INTO gtt_batch_module_test (name, age) VALUES (:1, :2)"
@@ -171,13 +154,13 @@ defmodule Inexora.BatchTest do
         assert db_count_int == 3
 
         drop_test_table(conn)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
 
     @tag :oracle_database
     test "handles empty rows list" do
-      with {:ok, ctx, conn} <- connect_test_db() do
+      with {:ok, ctx, conn} <- connect_test_db_nif() do
         :ok = setup_test_table(conn)
 
         sql = "INSERT INTO gtt_batch_module_test (name, age) VALUES (:1, :2)"
@@ -188,7 +171,7 @@ defmodule Inexora.BatchTest do
         assert count == 0
 
         drop_test_table(conn)
-        cleanup(ctx, conn)
+        cleanup_nif(ctx, conn)
       end
     end
   end
