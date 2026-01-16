@@ -26,6 +26,7 @@ defmodule Inexora.Type do
   @oracle_type_boolean 2022
   @oracle_type_interval_ds 2015
   @oracle_type_interval_ym 2016
+  @oracle_type_urowid 2030
 
   @doc """
   Converts a value from the NIF to an Elixir-friendly format.
@@ -229,6 +230,17 @@ defmodule Inexora.Type do
     oracle_type in [
       @oracle_type_interval_ds,
       @oracle_type_interval_ym
+    ]
+  end
+
+  @doc """
+  Returns true if the Oracle type represents a ROWID type.
+  """
+  @spec rowid_type?(non_neg_integer()) :: boolean()
+  def rowid_type?(oracle_type) do
+    oracle_type in [
+      @oracle_type_rowid,
+      @oracle_type_urowid
     ]
   end
 end

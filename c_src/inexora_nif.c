@@ -772,6 +772,20 @@ static ERL_NIF_TERM nif_stmt_get_query_value(ErlNifEnv *env, int argc, const ERL
             );
             break;
         }
+        case DPI_NATIVE_TYPE_ROWID: {
+            // Return ROWID as string
+            dpiRowid *rowid = data->value.asRowid;
+            const char *rowidStr;
+            uint32_t rowidLen;
+            if (dpiRowid_getStringValue(rowid, &rowidStr, &rowidLen) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+            unsigned char *buf = enif_make_new_binary(env, rowidLen, &value);
+            memcpy(buf, rowidStr, rowidLen);
+            break;
+        }
         default:
             // For unsupported types, return raw bytes if possible or nil
             return make_error_tuple(env, "unsupported_type");
