@@ -20,6 +20,8 @@ defmodule Inexora.Type do
   @oracle_type_blob 2019
   @oracle_type_raw 2006
   @oracle_type_long_raw 2025
+  @oracle_type_binary_float 2007
+  @oracle_type_binary_double 2008
   @oracle_type_rowid 2005
   @oracle_type_boolean 2022
 
@@ -79,6 +81,26 @@ defmodule Inexora.Type do
       {year, month, day, hour, minute, second, fsecond} ->
         microsecond = div(fsecond, 1000)
         NaiveDateTime.new!(year, month, day, hour, minute, second, {microsecond, 6})
+
+      _ ->
+        value
+    end
+  end
+
+  defp convert_from_oracle(value, oracle_type)
+       when oracle_type in [@oracle_type_binary_float, @oracle_type_binary_double] do
+    # BINARY_FLOAT and BINARY_DOUBLE are returned as strings from NIF
+    # Convert to Elixir float
+    case value do
+      v when is_binary(v) ->
+        case Float.parse(v) do
+          {float, ""} -> float
+          {float, _} -> float
+          :error -> value
+        end
+
+      v when is_float(v) ->
+        v
 
       _ ->
         value
@@ -169,6 +191,17 @@ defmodule Inexora.Type do
       @oracle_type_raw,
       @oracle_type_long_raw,
       @oracle_type_blob
+    ]
+  end
+
+  @doc """
+  Returns true if the Oracle type represents a floating-point type.
+  """
+  @spec float_type?(non_neg_integer()) :: boolean()
+  def float_type?(oracle_type) do
+    oracle_type in [
+      @oracle_type_binary_float,
+      @oracle_type_binary_double
     ]
   end
 end

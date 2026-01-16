@@ -140,6 +140,7 @@
 - [datatype] CLOB → binary (String)
 - [datatype] BLOB → binary (raw)
 - [datatype] RAW/LONG RAW → binary (using `{:raw, binary}` wrapper for binding)
+- [datatype] BINARY_FLOAT/BINARY_DOUBLE → float
 - [datatype] NULL handling
 - [ecto] Ecto adapter (`Ecto.Adapters.Oracle`)
 - [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
@@ -155,7 +156,6 @@
 - [core] Named parameter binding (:name style)
 - [core] Batch/array operations
 - [ecto] Implement Ecto migrations (runtime testing)
-- [ecto] Integration tests with Ecto Repo
 
 ---
 

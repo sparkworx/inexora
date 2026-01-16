@@ -823,6 +823,8 @@ defmodule Ecto.Adapters.Oracle.Connection do
   defp ecto_to_db(:integer), do: "NUMBER(19)"
   defp ecto_to_db(:bigint), do: "NUMBER(19)"
   defp ecto_to_db(:float), do: "BINARY_DOUBLE"
+  defp ecto_to_db(:binary_float), do: "BINARY_FLOAT"
+  defp ecto_to_db(:binary_double), do: "BINARY_DOUBLE"
   defp ecto_to_db(:decimal), do: "NUMBER"
   defp ecto_to_db(:boolean), do: "NUMBER(1)"
   defp ecto_to_db(:date), do: "DATE"
