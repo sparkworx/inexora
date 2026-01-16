@@ -682,6 +682,73 @@ static ERL_NIF_TERM nif_stmt_get_query_value(ErlNifEnv *env, int argc, const ERL
         case DPI_NATIVE_TYPE_BOOLEAN:
             value = data->value.asBoolean ? ATOM_TRUE : ATOM_FALSE;
             break;
+        case DPI_NATIVE_TYPE_LOB: {
+            // Handle CLOB and BLOB types
+            dpiLob *lob = data->value.asLOB;
+            if (lob == NULL) {
+                value = ATOM_NIL;
+                break;
+            }
+
+            // Get the size of the LOB
+            uint64_t lob_size;
+            if (dpiLob_getSize(lob, &lob_size) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+
+            // Handle empty LOB
+            if (lob_size == 0) {
+                ERL_NIF_TERM empty_bin;
+                enif_make_new_binary(env, 0, &empty_bin);
+                value = empty_bin;
+                break;
+            }
+
+            // For CLOB, get buffer size (characters to bytes)
+            dpiOracleTypeNum lob_type;
+            if (dpiLob_getType(lob, &lob_type) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+
+            uint64_t buffer_size;
+            if (lob_type == DPI_ORACLE_TYPE_CLOB || lob_type == DPI_ORACLE_TYPE_NCLOB) {
+                // For CLOBs, get the buffer size in bytes
+                if (dpiLob_getBufferSize(lob, lob_size, &buffer_size) < 0) {
+                    dpiErrorInfo errorInfo;
+                    dpiContext_getError(stmt_res->context, &errorInfo);
+                    return make_dpi_error(env, &errorInfo);
+                }
+            } else {
+                // For BLOBs, size is already in bytes
+                buffer_size = lob_size;
+            }
+
+            // Allocate buffer and read the LOB content
+            ERL_NIF_TERM bin;
+            unsigned char *buf = enif_make_new_binary(env, buffer_size, &bin);
+            uint64_t bytes_read = buffer_size;
+
+            if (dpiLob_readBytes(lob, 1, lob_size, (char *)buf, &bytes_read) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+
+            // If we read fewer bytes than allocated, create a correctly sized binary
+            if (bytes_read < buffer_size) {
+                ERL_NIF_TERM trimmed_bin;
+                unsigned char *trimmed_buf = enif_make_new_binary(env, bytes_read, &trimmed_bin);
+                memcpy(trimmed_buf, buf, bytes_read);
+                value = trimmed_bin;
+            } else {
+                value = bin;
+            }
+            break;
+        }
         default:
             // For unsupported types, return raw bytes if possible or nil
             return make_error_tuple(env, "unsupported_type");

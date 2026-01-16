@@ -209,6 +209,93 @@ defmodule Inexora.QueryExecutionTest do
     end
   end
 
+  describe "LOB operations" do
+    @tag :oracle_database
+    test "reads CLOB data as string" do
+      with {:ok, state} <- connect_test_db() do
+        # Use TO_CLOB to create a CLOB value
+        query = Query.new("SELECT TO_CLOB('Hello, CLOB World!') AS clob_val FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[clob_val]] = result.rows
+        assert is_binary(clob_val)
+        assert clob_val == "Hello, CLOB World!"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "reads large CLOB data" do
+      with {:ok, state} <- connect_test_db() do
+        # Generate a large string using RPAD (VARCHAR2 limited to 4000 bytes)
+        query = Query.new("SELECT TO_CLOB(RPAD('X', 4000, 'Y')) AS large_clob FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[clob_val]] = result.rows
+        assert is_binary(clob_val)
+        assert String.length(clob_val) == 4000
+        assert String.starts_with?(clob_val, "X")
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "reads BLOB data as binary" do
+      with {:ok, state} <- connect_test_db() do
+        # Use UTL_RAW.CAST_TO_RAW and TO_BLOB to create BLOB data
+        query = Query.new("SELECT TO_BLOB(UTL_RAW.CAST_TO_RAW('binary data')) AS blob_val FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[blob_val]] = result.rows
+        assert is_binary(blob_val)
+        assert blob_val == "binary data"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "reads empty CLOB" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT TO_CLOB('') AS empty_clob FROM dual")
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[clob_val]] = result.rows
+        # Empty CLOB might be nil or empty string depending on Oracle version
+        assert clob_val == "" or clob_val == nil
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "reads NULL CLOB" do
+      with {:ok, state} <- connect_test_db() do
+        # Use EMPTY_CLOB() which returns an empty LOB locator, or a subquery that returns NULL
+        query = Query.new("""
+        SELECT CASE WHEN 1=0 THEN TO_CLOB('x') ELSE NULL END AS null_clob FROM dual
+        """)
+
+        {:ok, _query, result, new_state} = Connection.handle_execute(query, [], [], state)
+
+        assert result.num_rows == 1
+        assert [[nil]] = result.rows
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+  end
+
   describe "cursor operations" do
     @tag :oracle_database
     test "handle_declare returns not implemented error" do
