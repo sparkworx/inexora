@@ -349,4 +349,42 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
       assert Decimal.equal?(remaining, Decimal.new(0))
     end
   end
+
+  describe "Repo.insert_all/3" do
+    test "inserts multiple records without returning" do
+      # Insert multiple records using insert_all (uses INSERT ALL syntax)
+      entries = [
+        %{id: 1, name: "InsertAll1", email: "ia1@test.com", age: 21, active: true},
+        %{id: 2, name: "InsertAll2", email: "ia2@test.com", age: 22, active: false},
+        %{id: 3, name: "InsertAll3", email: "ia3@test.com", age: 23, active: true}
+      ]
+
+      {count, nil} = TestRepo.insert_all(User, entries)
+
+      assert count == 3
+
+      # Verify all records exist
+      {:ok, result} = TestRepo.query("SELECT COUNT(*) FROM gtt_ecto_test_users")
+      assert [[db_count]] = result.rows
+      assert Decimal.equal?(db_count, Decimal.new(3))
+    end
+
+    test "inserts multiple records with different field subsets" do
+      # Some records have all fields, some have fewer
+      entries = [
+        %{id: 1, name: "Full", email: "full@test.com", age: 30, active: true},
+        %{id: 2, name: "NoAge", email: "noage@test.com", age: nil, active: false},
+        %{id: 3, name: "Minimal", email: nil, age: nil, active: nil}
+      ]
+
+      {count, nil} = TestRepo.insert_all(User, entries)
+
+      assert count == 3
+
+      # Verify record with nil fields
+      user = TestRepo.get(User, 3)
+      assert user.name == "Minimal"
+      assert user.email == nil
+    end
+  end
 end

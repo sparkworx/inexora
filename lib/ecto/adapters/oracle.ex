@@ -44,6 +44,7 @@ defmodule Ecto.Adapters.Oracle do
 
   defp bool_encode(true), do: {:ok, 1}
   defp bool_encode(false), do: {:ok, 0}
+  defp bool_encode(nil), do: {:ok, nil}
 
   @impl Ecto.Adapter
   def loaders(:boolean, type), do: [&bool_decode/1, type]

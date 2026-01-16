@@ -152,6 +152,8 @@
 - [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
 - [ecto] DDL generation (CREATE TABLE, DROP TABLE, ALTER TABLE, indexes, constraints)
 - [ecto] Integration tests with Ecto Repo
+- [ecto] Bulk insert via `insert_all` using Oracle's `INSERT ALL` syntax
+- [ecto] High-level batch operations via `Inexora.Batch` module
 
 **In Progress**:
 - None
@@ -161,7 +163,7 @@
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
 - [core] Cursor/streaming support for large result sets
 - [ecto] Implement Ecto migrations (runtime testing)
-- [ecto] Integrate batch/array binding into Ecto Repo for bulk insert support
+- [ecto] Batch insert_all with RETURNING (requires special adapter handling)
 
 ---
 

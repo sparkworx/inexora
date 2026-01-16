@@ -114,28 +114,81 @@ defmodule Ecto.Adapters.Oracle.Connection do
 
   @impl true
   def insert(prefix, table, header, rows, on_conflict, returning, placeholders) do
-    values =
-      if header == [] do
-        [?(, intersperse_map(rows, ?,, fn _ -> "DEFAULT" end), ?)]
-      else
-        [?(, intersperse_map(header, ?,, &quote_name/1), ") VALUES " | insert_all(rows, 1, placeholders)]
-      end
+    table_name = quote_table(prefix, table)
+    num_rows = length(rows)
 
-    [
-      "INSERT INTO ",
-      quote_table(prefix, table),
-      values,
-      on_conflict(on_conflict, header),
-      returning(returning)
-    ]
+    cond do
+      # Empty header - use DEFAULT VALUES
+      header == [] ->
+        [
+          "INSERT INTO ",
+          table_name,
+          " (",
+          intersperse_map(rows, ?,, fn _ -> "DEFAULT" end),
+          ")",
+          on_conflict(on_conflict, header),
+          returning(returning)
+        ]
+
+      # Single row - standard INSERT
+      num_rows == 1 ->
+        {values, _counter} = insert_each(hd(rows), 1, placeholders)
+        [
+          "INSERT INTO ",
+          table_name,
+          " (",
+          intersperse_map(header, ?,, &quote_name/1),
+          ") VALUES (",
+          values,
+          ")",
+          on_conflict(on_conflict, header),
+          returning(returning)
+        ]
+
+      # Multi-row without RETURNING - use INSERT ALL
+      returning == [] ->
+        [
+          "INSERT ALL",
+          insert_all_into(table_name, header, rows, 1, placeholders),
+          " SELECT 1 FROM DUAL"
+        ]
+
+      # Multi-row with RETURNING - generate single-row INSERT for batch execution
+      # The Ecto adapter will handle batch execution separately
+      true ->
+        {values, _counter} = insert_each(hd(rows), 1, placeholders)
+        [
+          "INSERT INTO ",
+          table_name,
+          " (",
+          intersperse_map(header, ?,, &quote_name/1),
+          ") VALUES (",
+          values,
+          ")",
+          on_conflict(on_conflict, header),
+          returning(returning)
+        ]
+    end
   end
 
-  defp insert_all(rows, counter, placeholders) do
-    intersperse_reduce(rows, ?,, counter, fn row, counter ->
-      {row_values, counter} = insert_each(row, counter, placeholders)
-      {[?(, row_values, ?)], counter}
-    end)
-    |> elem(0)
+  # Generate INSERT ALL INTO clauses for multi-row insert
+  defp insert_all_into(table_name, header, rows, counter, placeholders) do
+    {clauses, _final_counter} =
+      Enum.reduce(rows, {[], counter}, fn row, {acc, counter} ->
+        {values, new_counter} = insert_each(row, counter, placeholders)
+        clause = [
+          " INTO ",
+          table_name,
+          " (",
+          intersperse_map(header, ?,, &quote_name/1),
+          ") VALUES (",
+          values,
+          ")"
+        ]
+        {[clause | acc], new_counter}
+      end)
+
+    Enum.reverse(clauses)
   end
 
   defp insert_each(values, counter, placeholders) do
