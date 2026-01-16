@@ -49,10 +49,26 @@ static ERL_NIF_TERM make_ok_tuple(ErlNifEnv *env, ERL_NIF_TERM value) {
     return enif_make_tuple2(env, ATOM_OK, value);
 }
 
+// Helper: make binary from null-terminated C string
+static ERL_NIF_TERM make_binary_string(ErlNifEnv *env, const char *str) {
+    size_t len = strlen(str);
+    ERL_NIF_TERM bin;
+    unsigned char *buf = enif_make_new_binary(env, len, &bin);
+    memcpy(buf, str, len);
+    return bin;
+}
+
+// Helper: make binary from C string with explicit length
+static ERL_NIF_TERM make_binary_string_len(ErlNifEnv *env, const char *str, size_t len) {
+    ERL_NIF_TERM bin;
+    unsigned char *buf = enif_make_new_binary(env, len, &bin);
+    memcpy(buf, str, len);
+    return bin;
+}
+
 // Helper: make {:error, reason} tuple
 static ERL_NIF_TERM make_error_tuple(ErlNifEnv *env, const char *reason) {
-    return enif_make_tuple2(env, ATOM_ERROR,
-        enif_make_string(env, reason, ERL_NIF_LATIN1));
+    return enif_make_tuple2(env, ATOM_ERROR, make_binary_string(env, reason));
 }
 
 // Helper: make {:error, dpiErrorInfo} tuple with details
@@ -60,8 +76,8 @@ static ERL_NIF_TERM make_dpi_error(ErlNifEnv *env, dpiErrorInfo *errorInfo) {
     return enif_make_tuple2(env, ATOM_ERROR,
         enif_make_tuple3(env,
             enif_make_int(env, errorInfo->code),
-            enif_make_string(env, errorInfo->fnName ? errorInfo->fnName : "unknown", ERL_NIF_LATIN1),
-            enif_make_string_len(env, errorInfo->message, errorInfo->messageLength, ERL_NIF_LATIN1)
+            make_binary_string(env, errorInfo->fnName ? errorInfo->fnName : "unknown"),
+            make_binary_string_len(env, errorInfo->message, errorInfo->messageLength)
         ));
 }
 
@@ -390,7 +406,7 @@ static ERL_NIF_TERM nif_conn_get_server_version(ErlNifEnv *env, int argc, const 
         return make_dpi_error(env, &errorInfo);
     }
 
-    ERL_NIF_TERM release_str = enif_make_string_len(env, releaseString, releaseStringLength, ERL_NIF_LATIN1);
+    ERL_NIF_TERM release_str = make_binary_string_len(env, releaseString, releaseStringLength);
     ERL_NIF_TERM version_tuple = enif_make_tuple5(env,
         enif_make_int(env, versionInfo.versionNum),
         enif_make_int(env, versionInfo.releaseNum),
