@@ -207,3 +207,11 @@ ORACLE_DATABASE_AVAILABLE=1 mix test
 - [DBConnection behaviour](https://hexdocs.pm/db_connection/)
 
 ---
+
+## Bash Execution Rules
+
+When running multi-line scripts or code snippets:
+- NEVER use heredoc piping (e.g., `cat <<EOF | mix run`)
+- Write scripts to `tmp/` in the project root with descriptive names (e.g., `tmp/test_boolean_encoding.exs`)
+- Execute the file directly (e.g., `mix run tmp/test_boolean_encoding.exs`)
+- Do NOT auto-delete tmp files — leave them for debugging
