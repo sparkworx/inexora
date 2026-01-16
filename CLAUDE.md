@@ -133,6 +133,7 @@
 - [core] SQL statement preparation and execution
 - [core] Result set fetching with column metadata
 - [core] Parameter binding with positional placeholders (:1, :2, etc.)
+- [core] Named parameter binding (:name style) with map params
 - [datatype] VARCHAR2/CHAR → binary (String)
 - [datatype] NUMBER → Decimal (with full precision)
 - [datatype] DATE → Date
@@ -156,7 +157,6 @@
 **TODO/Upcoming**:
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
 - [core] Cursor/streaming support for large result sets
-- [core] Named parameter binding (:name style)
 - [core] Batch/array operations
 - [ecto] Implement Ecto migrations (runtime testing)
 

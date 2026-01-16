@@ -231,8 +231,10 @@ defmodule Inexora.Connection do
   # ============================================================
 
   defp bind_params(_stmt, []), do: :ok
+  defp bind_params(_stmt, params) when params == %{}, do: :ok
 
-  defp bind_params(stmt, params) do
+  # Positional binding (list of values)
+  defp bind_params(stmt, params) when is_list(params) do
     params
     |> Enum.with_index(1)
     |> Enum.reduce_while(:ok, fn {value, pos}, :ok ->
@@ -240,6 +242,21 @@ defmodule Inexora.Connection do
       encoded_value = Type.encode(value)
 
       case Nif.stmt_bind_value_by_pos(stmt, pos, type_hint, encoded_value) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  # Named binding (map of name => value)
+  defp bind_params(stmt, params) when is_map(params) do
+    Enum.reduce_while(params, :ok, fn {name, value}, :ok ->
+      # Oracle bind names are case-insensitive but ODPI-C returns them uppercase
+      name_str = name |> to_string() |> String.upcase()
+      type_hint = Type.type_hint(value)
+      encoded_value = Type.encode(value)
+
+      case Nif.stmt_bind_value_by_name(stmt, name_str, type_hint, encoded_value) do
         :ok -> {:cont, :ok}
         {:error, _} = error -> {:halt, error}
       end

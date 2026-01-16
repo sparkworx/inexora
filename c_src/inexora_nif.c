@@ -1043,6 +1043,299 @@ static ERL_NIF_TERM nif_stmt_bind_value_by_pos(ErlNifEnv *env, int argc, const E
     return ATOM_OK;
 }
 
+// Bind value by name
+// stmt_bind_value_by_name(stmt, name, type_atom, value) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_bind_value_by_name(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 4) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    // Get parameter name as binary
+    ErlNifBinary name_bin;
+    if (!enif_inspect_binary(env, argv[1], &name_bin)) {
+        return make_error_tuple(env, "invalid_name");
+    }
+
+    // Get type atom
+    char type_str[32];
+    if (!enif_get_atom(env, argv[2], type_str, sizeof(type_str), ERL_NIF_LATIN1)) {
+        return make_error_tuple(env, "invalid_type");
+    }
+
+    dpiData data;
+    dpiNativeTypeNum nativeType;
+    memset(&data, 0, sizeof(data));
+
+    // Handle nil/null - need to determine type from hint for proper binding
+    if (enif_is_identical(argv[3], ATOM_NIL)) {
+        data.isNull = 1;
+        // Use appropriate native type based on type hint for NULL values
+        if (strcmp(type_str, "raw") == 0) {
+            nativeType = DPI_NATIVE_TYPE_BYTES;
+        } else if (strcmp(type_str, "string") == 0 || strcmp(type_str, "binary") == 0) {
+            nativeType = DPI_NATIVE_TYPE_BYTES;
+        } else if (strcmp(type_str, "float") == 0) {
+            nativeType = DPI_NATIVE_TYPE_DOUBLE;
+        } else {
+            nativeType = DPI_NATIVE_TYPE_INT64;
+        }
+    }
+    // Handle based on type hint
+    else if (strcmp(type_str, "integer") == 0) {
+        ErlNifSInt64 val;
+        if (!enif_get_int64(env, argv[3], &val)) {
+            return make_error_tuple(env, "invalid_integer_value");
+        }
+        data.isNull = 0;
+        data.value.asInt64 = val;
+        nativeType = DPI_NATIVE_TYPE_INT64;
+    }
+    else if (strcmp(type_str, "float") == 0) {
+        double val;
+        if (!enif_get_double(env, argv[3], &val)) {
+            // Try integer conversion
+            ErlNifSInt64 int_val;
+            if (enif_get_int64(env, argv[3], &int_val)) {
+                val = (double)int_val;
+            } else {
+                return make_error_tuple(env, "invalid_float_value");
+            }
+        }
+        data.isNull = 0;
+        data.value.asDouble = val;
+        nativeType = DPI_NATIVE_TYPE_DOUBLE;
+    }
+    else if (strcmp(type_str, "string") == 0 || strcmp(type_str, "binary") == 0) {
+        ErlNifBinary bin;
+        if (!enif_inspect_binary(env, argv[3], &bin)) {
+            return make_error_tuple(env, "invalid_binary_value");
+        }
+        data.isNull = 0;
+        data.value.asBytes.ptr = (char *)bin.data;
+        data.value.asBytes.length = bin.size;
+        nativeType = DPI_NATIVE_TYPE_BYTES;
+    }
+    else if (strcmp(type_str, "raw") == 0) {
+        // RAW types need to use dpiStmt_bindByName with a variable
+        // to properly specify DPI_ORACLE_TYPE_RAW
+        dpiVar *var;
+        dpiData *varData;
+
+        // Check if value is nil (NULL)
+        if (enif_is_identical(argv[3], ATOM_NIL)) {
+            // Create a variable for NULL RAW
+            if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_RAW, DPI_NATIVE_TYPE_BYTES,
+                               1, 1, 0, 0, NULL, &var, &varData) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+            varData->isNull = 1;
+        } else {
+            ErlNifBinary bin;
+            if (!enif_inspect_binary(env, argv[3], &bin)) {
+                return make_error_tuple(env, "invalid_binary_value");
+            }
+
+            if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_RAW, DPI_NATIVE_TYPE_BYTES,
+                               1, bin.size > 0 ? bin.size : 1, 0, 0, NULL, &var, &varData) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+
+            // Set the value
+            if (dpiVar_setFromBytes(var, 0, (const char *)bin.data, bin.size) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                dpiVar_release(var);
+                return make_dpi_error(env, &errorInfo);
+            }
+        }
+
+        // Bind the variable by name
+        if (dpiStmt_bindByName(stmt_res->stmt, (const char *)name_bin.data, name_bin.size, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        return ATOM_OK;
+    }
+    else if (strcmp(type_str, "interval_ds") == 0) {
+        // Bind INTERVAL DAY TO SECOND
+        // Expect tuple {days, hours, minutes, seconds, fseconds}
+        int arity;
+        const ERL_NIF_TERM *tuple;
+        if (!enif_get_tuple(env, argv[3], &arity, &tuple) || arity != 5) {
+            return make_error_tuple(env, "invalid_interval_ds");
+        }
+
+        int days, hours, minutes, seconds, fseconds;
+        if (!enif_get_int(env, tuple[0], &days) ||
+            !enif_get_int(env, tuple[1], &hours) ||
+            !enif_get_int(env, tuple[2], &minutes) ||
+            !enif_get_int(env, tuple[3], &seconds) ||
+            !enif_get_int(env, tuple[4], &fseconds)) {
+            return make_error_tuple(env, "invalid_interval_ds_values");
+        }
+
+        dpiVar *var;
+        dpiData *varData;
+        if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_INTERVAL_DS, DPI_NATIVE_TYPE_INTERVAL_DS,
+                           1, 0, 0, 0, NULL, &var, &varData) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        varData->isNull = 0;
+        varData->value.asIntervalDS.days = days;
+        varData->value.asIntervalDS.hours = hours;
+        varData->value.asIntervalDS.minutes = minutes;
+        varData->value.asIntervalDS.seconds = seconds;
+        varData->value.asIntervalDS.fseconds = fseconds;
+
+        if (dpiStmt_bindByName(stmt_res->stmt, (const char *)name_bin.data, name_bin.size, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        return ATOM_OK;
+    }
+    else if (strcmp(type_str, "interval_ym") == 0) {
+        // Bind INTERVAL YEAR TO MONTH
+        // Expect tuple {years, months}
+        int arity;
+        const ERL_NIF_TERM *tuple;
+        if (!enif_get_tuple(env, argv[3], &arity, &tuple) || arity != 2) {
+            return make_error_tuple(env, "invalid_interval_ym");
+        }
+
+        int years, months;
+        if (!enif_get_int(env, tuple[0], &years) ||
+            !enif_get_int(env, tuple[1], &months)) {
+            return make_error_tuple(env, "invalid_interval_ym_values");
+        }
+
+        dpiVar *var;
+        dpiData *varData;
+        if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_INTERVAL_YM, DPI_NATIVE_TYPE_INTERVAL_YM,
+                           1, 0, 0, 0, NULL, &var, &varData) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        varData->isNull = 0;
+        varData->value.asIntervalYM.years = years;
+        varData->value.asIntervalYM.months = months;
+
+        if (dpiStmt_bindByName(stmt_res->stmt, (const char *)name_bin.data, name_bin.size, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        return ATOM_OK;
+    }
+    else {
+        return make_error_tuple(env, "unsupported_bind_type");
+    }
+
+    if (dpiStmt_bindValueByName(stmt_res->stmt, (const char *)name_bin.data, name_bin.size, nativeType, &data) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Get bind names from a prepared statement
+// stmt_get_bind_names(stmt) -> {:ok, [name1, name2, ...]} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_bind_names(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    // Get bind count first
+    uint32_t bindCount;
+    if (dpiStmt_getBindCount(stmt_res->stmt, &bindCount) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    if (bindCount == 0) {
+        return make_ok_tuple(env, enif_make_list(env, 0));
+    }
+
+    // Allocate arrays for bind names
+    const char **names = enif_alloc(sizeof(const char *) * bindCount);
+    uint32_t *nameLengths = enif_alloc(sizeof(uint32_t) * bindCount);
+
+    if (names == NULL || nameLengths == NULL) {
+        if (names) enif_free(names);
+        if (nameLengths) enif_free(nameLengths);
+        return make_error_tuple(env, "allocation_failed");
+    }
+
+    uint32_t numNames = bindCount;
+    if (dpiStmt_getBindNames(stmt_res->stmt, &numNames, names, nameLengths) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        enif_free(names);
+        enif_free(nameLengths);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Build list of name binaries
+    ERL_NIF_TERM *name_terms = enif_alloc(sizeof(ERL_NIF_TERM) * numNames);
+    if (name_terms == NULL) {
+        enif_free(names);
+        enif_free(nameLengths);
+        return make_error_tuple(env, "allocation_failed");
+    }
+
+    for (uint32_t i = 0; i < numNames; i++) {
+        ERL_NIF_TERM name_bin;
+        unsigned char *buf = enif_make_new_binary(env, nameLengths[i], &name_bin);
+        memcpy(buf, names[i], nameLengths[i]);
+        name_terms[i] = name_bin;
+    }
+
+    ERL_NIF_TERM result_list = enif_make_list_from_array(env, name_terms, numNames);
+
+    enif_free(names);
+    enif_free(nameLengths);
+    enif_free(name_terms);
+
+    return make_ok_tuple(env, result_list);
+}
+
 // Close/release a statement
 // stmt_close(stmt) -> :ok | {:error, reason}
 static ERL_NIF_TERM nif_stmt_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -1140,6 +1433,8 @@ static ErlNifFunc nif_funcs[] = {
     {"stmt_get_query_value", 2, nif_stmt_get_query_value, 0},
     {"stmt_get_row_count", 1, nif_stmt_get_row_count, 0},
     {"stmt_bind_value_by_pos", 4, nif_stmt_bind_value_by_pos, 0},
+    {"stmt_bind_value_by_name", 4, nif_stmt_bind_value_by_name, 0},
+    {"stmt_get_bind_names", 1, nif_stmt_get_bind_names, 0},
     {"stmt_close", 1, nif_stmt_close, 0},
     {"stmt_define_as_bytes", 3, nif_stmt_define_as_bytes, 0}
 };

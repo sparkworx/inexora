@@ -234,6 +234,39 @@ defmodule Inexora.Nif do
   def stmt_bind_value_by_pos(_stmt, _pos, _type, _value), do: :erlang.nif_error(:not_loaded)
 
   @doc """
+  Binds a value to a named parameter.
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `name` - Parameter name (binary, uppercase)
+    * `type` - Type hint atom: `:integer`, `:float`, `:string`, `:binary`, `:raw`, `:interval_ds`, `:interval_ym`
+    * `value` - The value to bind (or `nil` for NULL)
+
+  ## Example
+
+      # For SQL: "SELECT :USERNAME FROM dual"
+      Nif.stmt_bind_value_by_name(stmt, "USERNAME", :string, "john")
+  """
+  @spec stmt_bind_value_by_name(stmt(), binary(), atom(), term()) :: :ok | {:error, reason()}
+  def stmt_bind_value_by_name(_stmt, _name, _type, _value), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the bind variable names from a prepared statement.
+
+  Returns a list of bind variable names (as uppercase binaries).
+  Useful for introspection and named parameter binding.
+
+  ## Example
+
+      # For SQL: "SELECT :username, :age FROM dual"
+      {:ok, names} = Nif.stmt_get_bind_names(stmt)
+      # names => ["USERNAME", "AGE"]
+  """
+  @spec stmt_get_bind_names(stmt()) :: {:ok, [binary()]} | {:error, reason()}
+  def stmt_get_bind_names(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
   Closes and releases a prepared statement.
   """
   @spec stmt_close(stmt()) :: :ok | {:error, reason()}

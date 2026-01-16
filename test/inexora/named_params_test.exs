@@ -3,14 +3,13 @@ defmodule Inexora.NamedParamsTest do
   Tests for named parameter binding functionality.
 
   Oracle supports two styles of parameter binding:
-  1. Positional: `:1`, `:2`, `:3` - Currently supported
-  2. Named: `:name`, `:user_id` - NOT YET SUPPORTED
+  1. Positional: `:1`, `:2`, `:3` - bind with a list of values
+  2. Named: `:name`, `:user_id` - bind with a map of name => value
 
-  ODPI-C provides `dpiStmt_bindValueByName()` for named binding, but the Inexora
-  NIF currently only implements `stmt_bind_value_by_pos()`.
-
-  These tests document the current behavior and provide a framework for when
-  named parameter support is added.
+  Both styles are supported via:
+  - `Nif.stmt_bind_value_by_pos/4` for positional binding
+  - `Nif.stmt_bind_value_by_name/4` for named binding
+  - `Nif.stmt_get_bind_names/1` to retrieve bind variable names from a statement
 
   See ODPI-C test_4100 and test_2100 for reference implementation.
   """
@@ -107,51 +106,127 @@ defmodule Inexora.NamedParamsTest do
     end
   end
 
-  describe "named parameter binding (requires NIF support)" do
-    # These tests document the expected behavior once named binding is supported.
-    # Currently skipped as they require NIF changes (stmt_bind_value_by_name).
+  describe "named parameter binding" do
+    @tag :oracle_database
+    test "binds parameter by name - :username style" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT :username AS val FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(query, %{username: "test_value"}, [], state)
+
+        assert result.num_rows == 1
+        assert [[val]] = result.rows
+        assert val == "test_value"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
 
     @tag :oracle_database
-    @tag :skip
-    test "binds parameter by name - :username style" do
-      # This test documents the expected behavior once named binds are supported
-      # SQL would be: "SELECT :username FROM dual"
-      # Bind would map "username" => "test_value"
-
-      # Currently, Oracle will parse the named placeholder but we can't bind to it
-      # without NIF support for dpiStmt_bindValueByName
-
+    test "binds same named parameter used multiple times" do
       with {:ok, state} <- connect_test_db() do
-        # This would require named binding support:
-        # query = Query.new("SELECT :username FROM dual")
-        # {:ok, _query, result, state} = Connection.handle_execute(query, %{username: "test"}, [], state)
+        # Oracle allows using the same named placeholder multiple times
+        # The value is bound once and used for all occurrences
+        query = Query.new("SELECT :name, :name || '_suffix' FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(query, %{name: "test"}, [], state)
+
+        assert result.num_rows == 1
+        assert [[val1, val2]] = result.rows
+        assert val1 == "test"
+        assert val2 == "test_suffix"
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "binds multiple named parameters" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT :first_name, :last_name, :age FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(
+            query,
+            %{first_name: "John", last_name: "Doe", age: 30},
+            [],
+            state
+          )
+
+        assert result.num_rows == 1
+        assert [[first, last, age]] = result.rows
+        assert first == "John"
+        assert last == "Doe"
+        assert Decimal.equal?(age, Decimal.new(30))
+
+        Connection.disconnect(nil, new_state)
+      end
+    end
+
+    @tag :oracle_database
+    test "returns error for unknown parameter name" do
+      with {:ok, state} <- connect_test_db() do
+        # SQL has :username but we try to bind :user (wrong name)
+        query = Query.new("SELECT :username FROM dual")
+
+        # Binding with wrong parameter name should fail
+        {:error, error, _state} =
+          Connection.handle_execute(query, %{user: "test"}, [], state)
+
+        # Should get an Oracle error about unbound variable
+        assert error.message =~ "ORA-" or error.message =~ "bind"
 
         Connection.disconnect(nil, state)
       end
     end
 
     @tag :oracle_database
-    @tag :skip
-    test "binds same named parameter used multiple times" do
-      # SQL: "SELECT * FROM users WHERE name = :name OR email LIKE :name || '%'"
-      # Named binding should bind the value once and Oracle uses it for all occurrences
-      assert true
+    test "named binding with atom keys" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT :value FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(query, %{value: "atom_key_test"}, [], state)
+
+        assert result.num_rows == 1
+        assert [[val]] = result.rows
+        assert val == "atom_key_test"
+
+        Connection.disconnect(nil, new_state)
+      end
     end
 
     @tag :oracle_database
-    @tag :skip
-    test "binds multiple named parameters" do
-      # SQL: "SELECT :first_name, :last_name, :age FROM dual"
-      # Bind map: %{first_name: "John", last_name: "Doe", age: 30}
-      assert true
+    test "named binding with string keys" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT :value FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(query, %{"value" => "string_key_test"}, [], state)
+
+        assert result.num_rows == 1
+        assert [[val]] = result.rows
+        assert val == "string_key_test"
+
+        Connection.disconnect(nil, new_state)
+      end
     end
 
     @tag :oracle_database
-    @tag :skip
-    test "returns error for unknown parameter name" do
-      # SQL has :username but we try to bind :user
-      # Should return an error about unbound variable
-      assert true
+    test "named binding with NULL value" do
+      with {:ok, state} <- connect_test_db() do
+        query = Query.new("SELECT :val FROM dual")
+
+        {:ok, _query, result, new_state} =
+          Connection.handle_execute(query, %{val: nil}, [], state)
+
+        assert result.num_rows == 1
+        assert [[nil]] = result.rows
+
+        Connection.disconnect(nil, new_state)
+      end
     end
   end
 
@@ -298,25 +373,60 @@ defmodule Inexora.NamedParamsTest do
     end
   end
 
-  describe "get bind names (requires NIF support)" do
-    # ODPI-C provides dpiStmt_getBindNames() to retrieve the names of bind
-    # variables in a prepared statement. This is useful for named binding.
-
+  describe "get bind names" do
     @tag :oracle_database
-    @tag :skip
     test "retrieves bind names from prepared statement" do
-      # This would require NIF support for stmt_get_bind_names
-      # SQL: "SELECT :username, :age FROM dual"
-      # Expected bind names: ["USERNAME", "AGE"] (Oracle uppercases)
-      assert true
+      with {:ok, state} <- connect_test_db() do
+        alias Inexora.Nif
+
+        {:ok, prepared_query, state} =
+          Connection.handle_prepare(Query.new("SELECT :username, :age FROM dual"), [], state)
+
+        {:ok, names} = Nif.stmt_get_bind_names(prepared_query.statement)
+
+        # Oracle returns bind names in uppercase
+        assert "USERNAME" in names
+        assert "AGE" in names
+        assert length(names) == 2
+
+        Connection.disconnect(nil, state)
+      end
     end
 
     @tag :oracle_database
-    @tag :skip
     test "retrieves unique bind names (deduplicates)" do
-      # SQL: "SELECT :a, :a, :b FROM dual"
-      # Expected bind names: ["A", "B"] (deduplicated)
-      assert true
+      with {:ok, state} <- connect_test_db() do
+        alias Inexora.Nif
+
+        # Same parameter used multiple times - should only appear once
+        {:ok, prepared_query, state} =
+          Connection.handle_prepare(Query.new("SELECT :a, :a, :b FROM dual"), [], state)
+
+        {:ok, names} = Nif.stmt_get_bind_names(prepared_query.statement)
+
+        # Oracle deduplicates the names
+        assert "A" in names
+        assert "B" in names
+        assert length(names) == 2
+
+        Connection.disconnect(nil, state)
+      end
+    end
+
+    @tag :oracle_database
+    test "returns empty list for statement with no bind variables" do
+      with {:ok, state} <- connect_test_db() do
+        alias Inexora.Nif
+
+        {:ok, prepared_query, state} =
+          Connection.handle_prepare(Query.new("SELECT 1 FROM dual"), [], state)
+
+        {:ok, names} = Nif.stmt_get_bind_names(prepared_query.statement)
+
+        assert names == []
+
+        Connection.disconnect(nil, state)
+      end
     end
   end
 
