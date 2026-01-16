@@ -2,6 +2,7 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
   use ExUnit.Case, async: false
 
   @moduletag :oracle_database
+  @moduletag :ecto_integration
 
   defmodule TestRepo do
     use Ecto.Repo,
@@ -13,7 +14,7 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     use Ecto.Schema
 
     @primary_key {:id, :integer, autogenerate: false}
-    schema "ecto_test_users" do
+    schema "gtt_ecto_test_users" do
       field :name, :string
       field :email, :string
       field :age, :integer
@@ -33,37 +34,33 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
 
     {:ok, pid} = TestRepo.start_link()
 
-    # Create test table
+    # Create Global Temporary Table for test isolation
+    # ON COMMIT PRESERVE ROWS keeps data for the session duration
+    # Each session sees only its own data - perfect for test isolation
     setup_result = TestRepo.query("""
       DECLARE
         table_exists NUMBER;
       BEGIN
-        SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ECTO_TEST_USERS';
+        SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'GTT_ECTO_TEST_USERS';
         IF table_exists > 0 THEN
-          EXECUTE IMMEDIATE 'DROP TABLE ecto_test_users';
+          EXECUTE IMMEDIATE 'DROP TABLE gtt_ecto_test_users';
         END IF;
-        EXECUTE IMMEDIATE 'CREATE TABLE ecto_test_users (
+        EXECUTE IMMEDIATE 'CREATE GLOBAL TEMPORARY TABLE gtt_ecto_test_users (
           id NUMBER(19) PRIMARY KEY,
           name VARCHAR2(255),
           email VARCHAR2(255),
           age NUMBER(19),
           active NUMBER(1)
-        )';
+        ) ON COMMIT PRESERVE ROWS';
       END;
     """)
 
     case setup_result do
       {:ok, _} ->
-        # Insert initial test data
-        TestRepo.query("""
-          INSERT INTO ecto_test_users (id, name, email, age, active)
-          VALUES (1, 'Alice', 'alice@example.com', 30, 1)
-        """)
-
         on_exit(fn ->
-          # Clean up test table if repo is still running
+          # Drop the GTT at suite end
           try do
-            TestRepo.query("DROP TABLE ecto_test_users")
+            TestRepo.query("DROP TABLE gtt_ecto_test_users")
           rescue
             _ -> :ok
           catch
@@ -76,12 +73,19 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
           end
         end)
 
-        {:ok, repo: TestRepo}
+        {:ok, repo: TestRepo, pid: pid}
 
       {:error, error} ->
         GenServer.stop(pid)
-        {:error, "Failed to setup test table: #{inspect(error)}"}
+        {:error, "Failed to setup GTT: #{inspect(error)}"}
     end
+  end
+
+  # Clear GTT data before each test for clean isolation
+  # Since we're using a single connection pool, we clear explicitly
+  setup do
+    TestRepo.query("DELETE FROM gtt_ecto_test_users")
+    :ok
   end
 
   describe "Repo.query/2" do
@@ -105,23 +109,23 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
 
   describe "Repo.insert/2" do
     test "inserts a record" do
-      user = %User{id: 10, name: "Diana", email: "diana@example.com", age: 28, active: true}
+      user = %User{id: 1, name: "Diana", email: "diana@example.com", age: 28, active: true}
 
       {:ok, inserted} = TestRepo.insert(user)
 
-      assert inserted.id == 10
+      assert inserted.id == 1
       assert inserted.name == "Diana"
     end
 
     test "inserts multiple records" do
-      user2 = %User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: true}
-      user3 = %User{id: 3, name: "Charlie", email: "charlie@example.com", age: 35, active: false}
+      user1 = %User{id: 1, name: "Bob", email: "bob@example.com", age: 25, active: true}
+      user2 = %User{id: 2, name: "Charlie", email: "charlie@example.com", age: 35, active: false}
 
+      {:ok, _} = TestRepo.insert(user1)
       {:ok, _} = TestRepo.insert(user2)
-      {:ok, _} = TestRepo.insert(user3)
 
       # Verify they exist
-      {:ok, result} = TestRepo.query("SELECT COUNT(*) FROM ecto_test_users WHERE id IN (2, 3)")
+      {:ok, result} = TestRepo.query("SELECT COUNT(*) FROM gtt_ecto_test_users WHERE id IN (1, 2)")
       assert [[count]] = result.rows
       assert Decimal.equal?(count, Decimal.new(2))
     end
@@ -131,50 +135,75 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     test "retrieves all records" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: true})
+
       users = TestRepo.all(from u in User)
 
-      assert length(users) >= 1
+      assert length(users) == 2
       assert Enum.all?(users, &is_struct(&1, User))
     end
 
     test "retrieves records with where clause" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: false})
+
       users = TestRepo.all(from u in User, where: u.active == true)
 
+      assert length(users) == 1
       assert Enum.all?(users, fn u -> u.active == true end)
     end
 
     test "retrieves records with select" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+
       names = TestRepo.all(from u in User, select: u.name)
 
       assert is_list(names)
-      assert Enum.all?(names, &is_binary/1)
+      assert names == ["Alice"]
     end
 
     test "retrieves records with order by" do
       import Ecto.Query
 
+      # Insert test data in non-alphabetical order
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Charlie", email: "c@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Alice", email: "a@example.com", age: 25, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 3, name: "Bob", email: "b@example.com", age: 35, active: true})
+
       users = TestRepo.all(from u in User, order_by: [asc: u.name])
 
       names = Enum.map(users, & &1.name)
-      assert names == Enum.sort(names)
+      assert names == ["Alice", "Bob", "Charlie"]
     end
 
     test "retrieves records with limit" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 3, name: "Charlie", email: "c@example.com", age: 35, active: true})
+
       users = TestRepo.all(from u in User, limit: 2)
 
-      assert length(users) <= 2
+      assert length(users) == 2
     end
   end
 
   describe "Repo.one/2" do
     test "retrieves single record" do
       import Ecto.Query
+
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
 
       user = TestRepo.one(from u in User, where: u.id == 1)
 
@@ -193,6 +222,9 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
 
   describe "Repo.get/3" do
     test "retrieves record by primary key" do
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+
       user = TestRepo.get(User, 1)
 
       assert user.id == 1
@@ -210,9 +242,9 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     test "updates a record" do
       import Ecto.Changeset
 
-      # Create a dedicated record for this test to avoid conflicts
+      # Insert test data
       {:ok, user} = TestRepo.insert(%User{
-        id: 50,
+        id: 1,
         name: "UpdateTest",
         email: "update@example.com",
         age: 40,
@@ -226,7 +258,7 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
       assert updated.name == "UpdateTest Updated"
 
       # Verify in database
-      reloaded = TestRepo.get(User, 50)
+      reloaded = TestRepo.get(User, 1)
       assert reloaded.name == "UpdateTest Updated"
     end
   end
@@ -234,16 +266,16 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
   describe "Repo.delete/2" do
     test "deletes a record" do
       # Insert a record to delete
-      user = %User{id: 100, name: "ToDelete", email: "delete@example.com", age: 20, active: false}
+      user = %User{id: 1, name: "ToDelete", email: "delete@example.com", age: 20, active: false}
       {:ok, inserted} = TestRepo.insert(user)
 
       # Delete it
       {:ok, deleted} = TestRepo.delete(inserted)
 
-      assert deleted.id == 100
+      assert deleted.id == 1
 
       # Verify it's gone
-      assert TestRepo.get(User, 100) == nil
+      assert TestRepo.get(User, 1) == nil
     end
   end
 
@@ -251,20 +283,27 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     test "counts records" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: true})
+
       count = TestRepo.aggregate(User, :count)
 
-      # Oracle returns NUMBER for count(*), which becomes Decimal
-      # Convert to integer for assertion
       count_int = if is_integer(count), do: count, else: Decimal.to_integer(count)
-      assert count_int >= 1
+      assert count_int == 2
     end
 
     test "calculates sum" do
       import Ecto.Query
 
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 30, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 20, active: true})
+
       sum = TestRepo.aggregate(from(u in User, where: u.active == true), :sum, :age)
 
-      assert is_number(sum) or is_nil(sum) or match?(%Decimal{}, sum)
+      sum_int = if is_integer(sum), do: sum, else: Decimal.to_integer(sum)
+      assert sum_int == 50
     end
   end
 
@@ -272,19 +311,20 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     test "updates multiple records" do
       import Ecto.Query
 
-      # First, set up some data
-      TestRepo.query("UPDATE ecto_test_users SET age = 25 WHERE id IN (2, 3)")
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Alice", email: "alice@example.com", age: 25, active: true})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Bob", email: "bob@example.com", age: 25, active: true})
 
       # Update with Ecto
       {count, nil} = TestRepo.update_all(
-        from(u in User, where: u.id in [2, 3]),
+        from(u in User, where: u.id in [1, 2]),
         set: [age: 99]
       )
 
-      assert count >= 0
+      assert count == 2
 
       # Verify
-      {:ok, result} = TestRepo.query("SELECT age FROM ecto_test_users WHERE id IN (2, 3)")
+      {:ok, result} = TestRepo.query("SELECT age FROM gtt_ecto_test_users WHERE id IN (1, 2)")
       ages = Enum.map(result.rows, fn [age] -> age end)
       assert Enum.all?(ages, fn age -> Decimal.equal?(age, Decimal.new(99)) end)
     end
@@ -294,17 +334,17 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
     test "deletes multiple records" do
       import Ecto.Query
 
-      # Insert some records to delete
-      TestRepo.query("INSERT INTO ecto_test_users (id, name, email, age, active) VALUES (200, 'Del1', 'del1@test.com', 1, 0)")
-      TestRepo.query("INSERT INTO ecto_test_users (id, name, email, age, active) VALUES (201, 'Del2', 'del2@test.com', 1, 0)")
+      # Insert test data
+      {:ok, _} = TestRepo.insert(%User{id: 1, name: "Del1", email: "del1@test.com", age: 1, active: false})
+      {:ok, _} = TestRepo.insert(%User{id: 2, name: "Del2", email: "del2@test.com", age: 1, active: false})
 
       # Delete with Ecto
-      {count, nil} = TestRepo.delete_all(from u in User, where: u.id >= 200)
+      {count, nil} = TestRepo.delete_all(from u in User, where: u.id in [1, 2])
 
-      assert count >= 2
+      assert count == 2
 
       # Verify they're gone
-      {:ok, result} = TestRepo.query("SELECT COUNT(*) FROM ecto_test_users WHERE id >= 200")
+      {:ok, result} = TestRepo.query("SELECT COUNT(*) FROM gtt_ecto_test_users")
       assert [[remaining]] = result.rows
       assert Decimal.equal?(remaining, Decimal.new(0))
     end
