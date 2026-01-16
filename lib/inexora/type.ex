@@ -23,7 +23,7 @@ defmodule Inexora.Type do
   @oracle_type_binary_float 2007
   @oracle_type_binary_double 2008
   @oracle_type_rowid 2005
-  @oracle_type_boolean 2022
+  # @oracle_type_boolean 2022  # TODO: Requires newer Oracle client driver
   @oracle_type_interval_ds 2015
   @oracle_type_interval_ym 2016
   @oracle_type_urowid 2030
