@@ -139,17 +139,18 @@
 - [datatype] TIMESTAMP/TIMESTAMP_TZ/TIMESTAMP_LTZ → NaiveDateTime
 - [datatype] CLOB → binary (String)
 - [datatype] BLOB → binary (raw)
+- [datatype] RAW/LONG RAW → binary (using `{:raw, binary}` wrapper for binding)
 - [datatype] NULL handling
 - [ecto] Ecto adapter (`Ecto.Adapters.Oracle`)
 - [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
 - [ecto] DDL generation (CREATE TABLE, DROP TABLE, ALTER TABLE, indexes, constraints)
+- [ecto] Integration tests with Ecto Repo
 
 **In Progress**:
 - None
 
 **TODO/Upcoming**:
 - [datatype] INTERVAL types
-- [datatype] RAW/LONG RAW types
 - [core] Cursor/streaming support for large result sets
 - [core] Named parameter binding (:name style)
 - [core] Batch/array operations

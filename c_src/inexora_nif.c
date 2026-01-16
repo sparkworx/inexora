@@ -814,10 +814,19 @@ static ERL_NIF_TERM nif_stmt_bind_value_by_pos(ErlNifEnv *env, int argc, const E
     dpiNativeTypeNum nativeType;
     memset(&data, 0, sizeof(data));
 
-    // Handle nil/null
+    // Handle nil/null - need to determine type from hint for proper binding
     if (enif_is_identical(argv[3], ATOM_NIL)) {
         data.isNull = 1;
-        nativeType = DPI_NATIVE_TYPE_INT64; // Arbitrary type for NULL
+        // Use appropriate native type based on type hint for NULL values
+        if (strcmp(type_str, "raw") == 0) {
+            nativeType = DPI_NATIVE_TYPE_BYTES;
+        } else if (strcmp(type_str, "string") == 0 || strcmp(type_str, "binary") == 0) {
+            nativeType = DPI_NATIVE_TYPE_BYTES;
+        } else if (strcmp(type_str, "float") == 0) {
+            nativeType = DPI_NATIVE_TYPE_DOUBLE;
+        } else {
+            nativeType = DPI_NATIVE_TYPE_INT64;
+        }
     }
     // Handle based on type hint
     else if (strcmp(type_str, "integer") == 0) {
@@ -853,6 +862,56 @@ static ERL_NIF_TERM nif_stmt_bind_value_by_pos(ErlNifEnv *env, int argc, const E
         data.value.asBytes.ptr = (char *)bin.data;
         data.value.asBytes.length = bin.size;
         nativeType = DPI_NATIVE_TYPE_BYTES;
+    }
+    else if (strcmp(type_str, "raw") == 0) {
+        // RAW types need to use dpiStmt_bindByPos with a variable
+        // to properly specify DPI_ORACLE_TYPE_RAW
+        dpiVar *var;
+        dpiData *varData;
+
+        // Check if value is nil (NULL)
+        if (enif_is_identical(argv[3], ATOM_NIL)) {
+            // Create a variable for NULL RAW
+            if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_RAW, DPI_NATIVE_TYPE_BYTES,
+                               1, 1, 0, 0, NULL, &var, &varData) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+            varData->isNull = 1;
+        } else {
+            ErlNifBinary bin;
+            if (!enif_inspect_binary(env, argv[3], &bin)) {
+                return make_error_tuple(env, "invalid_binary_value");
+            }
+
+            if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_RAW, DPI_NATIVE_TYPE_BYTES,
+                               1, bin.size > 0 ? bin.size : 1, 0, 0, NULL, &var, &varData) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                return make_dpi_error(env, &errorInfo);
+            }
+
+            // Set the value
+            if (dpiVar_setFromBytes(var, 0, (const char *)bin.data, bin.size) < 0) {
+                dpiErrorInfo errorInfo;
+                dpiContext_getError(stmt_res->context, &errorInfo);
+                dpiVar_release(var);
+                return make_dpi_error(env, &errorInfo);
+            }
+        }
+
+        // Bind the variable
+        if (dpiStmt_bindByPos(stmt_res->stmt, pos, var) < 0) {
+            dpiErrorInfo errorInfo;
+            dpiContext_getError(stmt_res->context, &errorInfo);
+            dpiVar_release(var);
+            return make_dpi_error(env, &errorInfo);
+        }
+
+        // Note: We don't release the var here as it needs to stay valid until execute
+        // It will be released when the statement is closed
+        return ATOM_OK;
     }
     else {
         return make_error_tuple(env, "unsupported_bind_type");

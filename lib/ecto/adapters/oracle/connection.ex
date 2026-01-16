@@ -818,6 +818,8 @@ defmodule Ecto.Adapters.Oracle.Connection do
   defp ecto_to_db(:uuid), do: "RAW(16)"
   defp ecto_to_db(:string), do: "VARCHAR2"
   defp ecto_to_db(:binary), do: "BLOB"
+  defp ecto_to_db(:raw), do: "RAW"
+  defp ecto_to_db(:long_raw), do: "LONG RAW"
   defp ecto_to_db(:integer), do: "NUMBER(19)"
   defp ecto_to_db(:bigint), do: "NUMBER(19)"
   defp ecto_to_db(:float), do: "BINARY_DOUBLE"

@@ -19,6 +19,7 @@ defmodule Inexora.Type do
   @oracle_type_clob 2017
   @oracle_type_blob 2019
   @oracle_type_raw 2006
+  @oracle_type_long_raw 2025
   @oracle_type_rowid 2005
   @oracle_type_boolean 2022
 
@@ -88,9 +89,13 @@ defmodule Inexora.Type do
 
   @doc """
   Determines the type hint atom for binding a value.
+
+  For RAW binary data, use the tuple `{:raw, binary}` to ensure proper
+  binding to Oracle RAW/LONG RAW columns.
   """
   @spec type_hint(term()) :: atom()
   def type_hint(nil), do: :integer
+  def type_hint({:raw, _}), do: :raw
   def type_hint(value) when is_boolean(value), do: :integer
   def type_hint(value) when is_integer(value), do: :integer
   def type_hint(value) when is_float(value), do: :float
@@ -108,6 +113,9 @@ defmodule Inexora.Type do
   def encode(nil), do: nil
   def encode(true), do: 1
   def encode(false), do: 0
+  def encode({:raw, binary}) when is_binary(binary), do: binary
+  def encode({:raw, nil}), do: nil
+  def encode({:raw, :null}), do: nil
   def encode(value) when is_integer(value), do: value
   def encode(value) when is_float(value), do: value
   def encode(value) when is_binary(value), do: value
@@ -149,6 +157,18 @@ defmodule Inexora.Type do
       @oracle_type_timestamp,
       @oracle_type_timestamp_tz,
       @oracle_type_timestamp_ltz
+    ]
+  end
+
+  @doc """
+  Returns true if the Oracle type represents a binary/raw type.
+  """
+  @spec binary_type?(non_neg_integer()) :: boolean()
+  def binary_type?(oracle_type) do
+    oracle_type in [
+      @oracle_type_raw,
+      @oracle_type_long_raw,
+      @oracle_type_blob
     ]
   end
 end
