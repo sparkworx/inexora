@@ -8,6 +8,7 @@
 // Resource types
 static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
 static ErlNifResourceType *CONNECTION_RESOURCE_TYPE;
+static ErlNifResourceType *STATEMENT_RESOURCE_TYPE;
 
 // Connection resource struct - holds both context and connection
 typedef struct {
@@ -15,12 +16,20 @@ typedef struct {
     dpiConn *conn;
 } InexoraConnection;
 
+// Statement resource struct - holds context, connection, and statement
+typedef struct {
+    dpiContext *context;
+    dpiConn *conn;
+    dpiStmt *stmt;
+} InexoraStatement;
+
 // Atoms (initialized in on_load)
 static ERL_NIF_TERM ATOM_OK;
 static ERL_NIF_TERM ATOM_ERROR;
 static ERL_NIF_TERM ATOM_NIL;
 static ERL_NIF_TERM ATOM_TRUE;
 static ERL_NIF_TERM ATOM_FALSE;
+static ERL_NIF_TERM ATOM_DONE;
 
 // Helper: make {:ok, value} tuple
 static ERL_NIF_TERM make_ok_tuple(ErlNifEnv *env, ERL_NIF_TERM value) {
@@ -62,6 +71,17 @@ static void connection_destructor(ErlNifEnv *env, void *obj) {
         conn_res->conn = NULL;
     }
     // Note: We don't destroy the context here as it's managed separately
+}
+
+// Statement destructor (called when Erlang garbage collects the resource)
+static void statement_destructor(ErlNifEnv *env, void *obj) {
+    (void)env;
+    InexoraStatement *stmt_res = (InexoraStatement *)obj;
+    if (stmt_res->stmt != NULL) {
+        dpiStmt_release(stmt_res->stmt);
+        stmt_res->stmt = NULL;
+    }
+    // Note: We don't release conn/context here as they're managed separately
 }
 
 // ============================================================
@@ -411,6 +431,375 @@ static ERL_NIF_TERM nif_conn_get_transaction_in_progress(ErlNifEnv *env, int arg
 }
 
 // ============================================================
+// Statement NIF Functions
+// ============================================================
+
+// Prepare a SQL statement
+// stmt_prepare(conn, sql) -> {:ok, stmt} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_prepare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraConnection *conn_res;
+    if (!enif_get_resource(env, argv[0], CONNECTION_RESOURCE_TYPE, (void **)&conn_res)) {
+        return make_error_tuple(env, "invalid_connection");
+    }
+
+    if (conn_res->conn == NULL) {
+        return make_error_tuple(env, "connection_closed");
+    }
+
+    ErlNifBinary sql_bin;
+    if (!enif_inspect_binary(env, argv[1], &sql_bin)) {
+        return make_error_tuple(env, "invalid_sql");
+    }
+
+    dpiStmt *stmt = NULL;
+    if (dpiConn_prepareStmt(conn_res->conn, 0, (const char *)sql_bin.data, sql_bin.size,
+            NULL, 0, &stmt) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(conn_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    InexoraStatement *stmt_res = enif_alloc_resource(STATEMENT_RESOURCE_TYPE, sizeof(InexoraStatement));
+    stmt_res->context = conn_res->context;
+    stmt_res->conn = conn_res->conn;
+    stmt_res->stmt = stmt;
+
+    ERL_NIF_TERM result = enif_make_resource(env, stmt_res);
+    enif_release_resource(stmt_res);
+
+    return make_ok_tuple(env, result);
+}
+
+// Execute a prepared statement
+// stmt_execute(stmt) -> {:ok, num_columns} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_execute(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    uint32_t numQueryColumns = 0;
+    if (dpiStmt_execute(stmt_res->stmt, DPI_MODE_EXEC_DEFAULT, &numQueryColumns) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return make_ok_tuple(env, enif_make_uint(env, numQueryColumns));
+}
+
+// Fetch next row from a SELECT statement
+// stmt_fetch(stmt) -> {:ok, true} | {:ok, :done} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_fetch(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    int found = 0;
+    uint32_t bufferRowIndex = 0;
+    if (dpiStmt_fetch(stmt_res->stmt, &found, &bufferRowIndex) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    if (found) {
+        return make_ok_tuple(env, ATOM_TRUE);
+    } else {
+        return make_ok_tuple(env, ATOM_DONE);
+    }
+}
+
+// Get column metadata for a query
+// stmt_get_query_info(stmt, pos) -> {:ok, %{name: name, type: type, ...}} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_query_info(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    dpiQueryInfo queryInfo;
+    if (dpiStmt_getQueryInfo(stmt_res->stmt, pos, &queryInfo) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Build result map with column info
+    ERL_NIF_TERM keys[] = {
+        enif_make_atom(env, "name"),
+        enif_make_atom(env, "oracle_type"),
+        enif_make_atom(env, "native_type"),
+        enif_make_atom(env, "db_size"),
+        enif_make_atom(env, "client_size"),
+        enif_make_atom(env, "precision"),
+        enif_make_atom(env, "scale"),
+        enif_make_atom(env, "null_ok")
+    };
+    ERL_NIF_TERM values[] = {
+        enif_make_string_len(env, queryInfo.name, queryInfo.nameLength, ERL_NIF_LATIN1),
+        enif_make_uint(env, queryInfo.typeInfo.oracleTypeNum),
+        enif_make_uint(env, queryInfo.typeInfo.defaultNativeTypeNum),
+        enif_make_uint(env, queryInfo.typeInfo.dbSizeInBytes),
+        enif_make_uint(env, queryInfo.typeInfo.clientSizeInBytes),
+        enif_make_int(env, queryInfo.typeInfo.precision),
+        enif_make_int(env, queryInfo.typeInfo.scale),
+        queryInfo.nullOk ? ATOM_TRUE : ATOM_FALSE
+    };
+
+    ERL_NIF_TERM result_map;
+    enif_make_map_from_arrays(env, keys, values, 8, &result_map);
+
+    return make_ok_tuple(env, result_map);
+}
+
+// Get column value at position for current row
+// stmt_get_query_value(stmt, pos) -> {:ok, value} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_query_value(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    dpiNativeTypeNum nativeTypeNum;
+    dpiData *data;
+    if (dpiStmt_getQueryValue(stmt_res->stmt, pos, &nativeTypeNum, &data) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    // Handle NULL
+    if (data->isNull) {
+        return make_ok_tuple(env, ATOM_NIL);
+    }
+
+    // Convert based on native type
+    ERL_NIF_TERM value;
+    switch (nativeTypeNum) {
+        case DPI_NATIVE_TYPE_INT64:
+            value = enif_make_int64(env, data->value.asInt64);
+            break;
+        case DPI_NATIVE_TYPE_UINT64:
+            value = enif_make_uint64(env, data->value.asUint64);
+            break;
+        case DPI_NATIVE_TYPE_FLOAT:
+            value = enif_make_double(env, (double)data->value.asFloat);
+            break;
+        case DPI_NATIVE_TYPE_DOUBLE:
+            value = enif_make_double(env, data->value.asDouble);
+            break;
+        case DPI_NATIVE_TYPE_BYTES: {
+            // Return as binary
+            ERL_NIF_TERM bin;
+            unsigned char *buf = enif_make_new_binary(env, data->value.asBytes.length, &bin);
+            memcpy(buf, data->value.asBytes.ptr, data->value.asBytes.length);
+            value = bin;
+            break;
+        }
+        case DPI_NATIVE_TYPE_TIMESTAMP: {
+            // Return as tuple {year, month, day, hour, minute, second, fsecond}
+            dpiTimestamp *ts = &data->value.asTimestamp;
+            value = enif_make_tuple7(env,
+                enif_make_int(env, ts->year),
+                enif_make_uint(env, ts->month),
+                enif_make_uint(env, ts->day),
+                enif_make_uint(env, ts->hour),
+                enif_make_uint(env, ts->minute),
+                enif_make_uint(env, ts->second),
+                enif_make_uint(env, ts->fsecond)
+            );
+            break;
+        }
+        case DPI_NATIVE_TYPE_BOOLEAN:
+            value = data->value.asBoolean ? ATOM_TRUE : ATOM_FALSE;
+            break;
+        default:
+            // For unsupported types, return raw bytes if possible or nil
+            return make_error_tuple(env, "unsupported_type");
+    }
+
+    return make_ok_tuple(env, value);
+}
+
+// Get row count (for DML statements)
+// stmt_get_row_count(stmt) -> {:ok, count} | {:error, reason}
+static ERL_NIF_TERM nif_stmt_get_row_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    uint64_t count;
+    if (dpiStmt_getRowCount(stmt_res->stmt, &count) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return make_ok_tuple(env, enif_make_uint64(env, count));
+}
+
+// Bind value by position
+// stmt_bind_value_by_pos(stmt, pos, type_atom, value) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_bind_value_by_pos(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 4) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt == NULL) {
+        return make_error_tuple(env, "statement_closed");
+    }
+
+    unsigned int pos;
+    if (!enif_get_uint(env, argv[1], &pos)) {
+        return make_error_tuple(env, "invalid_position");
+    }
+
+    // Get type atom
+    char type_str[32];
+    if (!enif_get_atom(env, argv[2], type_str, sizeof(type_str), ERL_NIF_LATIN1)) {
+        return make_error_tuple(env, "invalid_type");
+    }
+
+    dpiData data;
+    dpiNativeTypeNum nativeType;
+    memset(&data, 0, sizeof(data));
+
+    // Handle nil/null
+    if (enif_is_identical(argv[3], ATOM_NIL)) {
+        data.isNull = 1;
+        nativeType = DPI_NATIVE_TYPE_INT64; // Arbitrary type for NULL
+    }
+    // Handle based on type hint
+    else if (strcmp(type_str, "integer") == 0) {
+        ErlNifSInt64 val;
+        if (!enif_get_int64(env, argv[3], &val)) {
+            return make_error_tuple(env, "invalid_integer_value");
+        }
+        data.isNull = 0;
+        data.value.asInt64 = val;
+        nativeType = DPI_NATIVE_TYPE_INT64;
+    }
+    else if (strcmp(type_str, "float") == 0) {
+        double val;
+        if (!enif_get_double(env, argv[3], &val)) {
+            // Try integer conversion
+            ErlNifSInt64 int_val;
+            if (enif_get_int64(env, argv[3], &int_val)) {
+                val = (double)int_val;
+            } else {
+                return make_error_tuple(env, "invalid_float_value");
+            }
+        }
+        data.isNull = 0;
+        data.value.asDouble = val;
+        nativeType = DPI_NATIVE_TYPE_DOUBLE;
+    }
+    else if (strcmp(type_str, "string") == 0 || strcmp(type_str, "binary") == 0) {
+        ErlNifBinary bin;
+        if (!enif_inspect_binary(env, argv[3], &bin)) {
+            return make_error_tuple(env, "invalid_binary_value");
+        }
+        data.isNull = 0;
+        data.value.asBytes.ptr = (char *)bin.data;
+        data.value.asBytes.length = bin.size;
+        nativeType = DPI_NATIVE_TYPE_BYTES;
+    }
+    else {
+        return make_error_tuple(env, "unsupported_bind_type");
+    }
+
+    if (dpiStmt_bindValueByPos(stmt_res->stmt, pos, nativeType, &data) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
+    return ATOM_OK;
+}
+
+// Close/release a statement
+// stmt_close(stmt) -> :ok | {:error, reason}
+static ERL_NIF_TERM nif_stmt_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
+
+    InexoraStatement *stmt_res;
+    if (!enif_get_resource(env, argv[0], STATEMENT_RESOURCE_TYPE, (void **)&stmt_res)) {
+        return make_error_tuple(env, "invalid_statement");
+    }
+
+    if (stmt_res->stmt != NULL) {
+        dpiStmt_release(stmt_res->stmt);
+        stmt_res->stmt = NULL;
+    }
+
+    return ATOM_OK;
+}
+
+// ============================================================
 // NIF Registration
 // ============================================================
 
@@ -428,7 +817,16 @@ static ErlNifFunc nif_funcs[] = {
     {"conn_rollback", 1, nif_conn_rollback, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"conn_get_server_version", 1, nif_conn_get_server_version, 0},
     {"conn_get_is_healthy", 1, nif_conn_get_is_healthy, 0},
-    {"conn_get_transaction_in_progress", 1, nif_conn_get_transaction_in_progress, 0}
+    {"conn_get_transaction_in_progress", 1, nif_conn_get_transaction_in_progress, 0},
+    // Statement functions
+    {"stmt_prepare", 2, nif_stmt_prepare, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"stmt_execute", 1, nif_stmt_execute, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"stmt_fetch", 1, nif_stmt_fetch, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"stmt_get_query_info", 2, nif_stmt_get_query_info, 0},
+    {"stmt_get_query_value", 2, nif_stmt_get_query_value, 0},
+    {"stmt_get_row_count", 1, nif_stmt_get_row_count, 0},
+    {"stmt_bind_value_by_pos", 4, nif_stmt_bind_value_by_pos, 0},
+    {"stmt_close", 1, nif_stmt_close, 0}
 };
 
 // on_load callback - initialize resources and atoms
@@ -442,6 +840,7 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     ATOM_NIL = enif_make_atom(env, "nil");
     ATOM_TRUE = enif_make_atom(env, "true");
     ATOM_FALSE = enif_make_atom(env, "false");
+    ATOM_DONE = enif_make_atom(env, "done");
 
     // Register resource types
     CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
@@ -467,6 +866,19 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     );
 
     if (CONNECTION_RESOURCE_TYPE == NULL) {
+        return -1;
+    }
+
+    STATEMENT_RESOURCE_TYPE = enif_open_resource_type(
+        env,
+        NULL,
+        "inexora_statement",
+        statement_destructor,
+        ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER,
+        NULL
+    );
+
+    if (STATEMENT_RESOURCE_TYPE == NULL) {
         return -1;
     }
 

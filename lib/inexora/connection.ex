@@ -29,6 +29,9 @@ defmodule Inexora.Connection do
 
   alias Inexora.Error
   alias Inexora.Nif
+  alias Inexora.Query
+  alias Inexora.Result
+  alias Inexora.Type
 
   defstruct [
     :context,
@@ -142,35 +145,156 @@ defmodule Inexora.Connection do
     end
   end
 
-  # Placeholder implementations for query callbacks (to be implemented later)
+  # ============================================================
+  # Query Callbacks
+  # ============================================================
+
   @impl DBConnection
-  def handle_prepare(_query, _opts, state) do
-    {:error, Error.from_odpi("not implemented"), state}
+  def handle_prepare(%Query{sql: sql} = query, _opts, %__MODULE__{conn: conn} = state) do
+    case Nif.stmt_prepare(conn, sql) do
+      {:ok, stmt} ->
+        {:ok, %{query | statement: stmt}, state}
+
+      {:error, reason} ->
+        {:error, Error.from_odpi(reason), state}
+    end
+  end
+
+  def handle_prepare(sql, opts, state) when is_binary(sql) do
+    handle_prepare(Query.new(sql), opts, state)
   end
 
   @impl DBConnection
-  def handle_execute(_query, _params, _opts, state) do
-    {:error, Error.from_odpi("not implemented"), state}
+  def handle_execute(%Query{statement: stmt} = query, params, _opts, state) when is_reference(stmt) do
+    with :ok <- bind_params(stmt, params),
+         {:ok, num_columns} <- Nif.stmt_execute(stmt) do
+      if num_columns > 0 do
+        # SELECT query - fetch results
+        execute_select(query, num_columns, state)
+      else
+        # DML statement - get row count
+        execute_dml(stmt, state)
+      end
+    else
+      {:error, reason} ->
+        {:error, Error.from_odpi(reason), state}
+    end
+  end
+
+  def handle_execute(%Query{} = query, params, opts, state) do
+    # Query not prepared yet - prepare and execute
+    case handle_prepare(query, opts, state) do
+      {:ok, prepared_query, state} ->
+        handle_execute(prepared_query, params, opts, state)
+
+      {:error, _reason, _state} = error ->
+        error
+    end
   end
 
   @impl DBConnection
+  def handle_close(%Query{statement: stmt}, _opts, state) when is_reference(stmt) do
+    Nif.stmt_close(stmt)
+    {:ok, nil, state}
+  end
+
   def handle_close(_query, _opts, state) do
     {:ok, nil, state}
   end
 
   @impl DBConnection
   def handle_declare(_query, _params, _opts, state) do
-    {:error, Error.from_odpi("not implemented"), state}
+    # Cursors not yet supported
+    {:error, Error.from_odpi("cursors not implemented"), state}
   end
 
   @impl DBConnection
   def handle_fetch(_query, _cursor, _opts, state) do
-    {:error, Error.from_odpi("not implemented"), state}
+    {:error, Error.from_odpi("cursors not implemented"), state}
   end
 
   @impl DBConnection
   def handle_deallocate(_query, _cursor, _opts, state) do
     {:ok, nil, state}
+  end
+
+  # ============================================================
+  # Query Execution Helpers
+  # ============================================================
+
+  defp bind_params(_stmt, []), do: :ok
+
+  defp bind_params(stmt, params) do
+    params
+    |> Enum.with_index(1)
+    |> Enum.reduce_while(:ok, fn {value, pos}, :ok ->
+      type_hint = Type.type_hint(value)
+      encoded_value = Type.encode(value)
+
+      case Nif.stmt_bind_value_by_pos(stmt, pos, type_hint, encoded_value) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp execute_select(%Query{statement: stmt}, num_columns, state) do
+    # Get column metadata
+    columns =
+      for pos <- 1..num_columns do
+        case Nif.stmt_get_query_info(stmt, pos) do
+          {:ok, info} -> info
+          {:error, _} -> %{name: "col_#{pos}"}
+        end
+      end
+
+    column_names = Enum.map(columns, & &1[:name])
+
+    # Fetch all rows
+    rows = fetch_all_rows(stmt, num_columns, columns)
+
+    result = Result.new_select(column_names, rows)
+    {:ok, %Query{statement: stmt}, result, state}
+  end
+
+  defp execute_dml(stmt, state) do
+    case Nif.stmt_get_row_count(stmt) do
+      {:ok, count} ->
+        result = Result.new_dml(count)
+        {:ok, %Query{statement: stmt}, result, state}
+
+      {:error, reason} ->
+        {:error, Error.from_odpi(reason), state}
+    end
+  end
+
+  defp fetch_all_rows(stmt, num_columns, columns) do
+    fetch_rows_loop(stmt, num_columns, columns, [])
+  end
+
+  defp fetch_rows_loop(stmt, num_columns, columns, acc) do
+    case Nif.stmt_fetch(stmt) do
+      {:ok, true} ->
+        row = fetch_row_values(stmt, num_columns, columns)
+        fetch_rows_loop(stmt, num_columns, columns, [row | acc])
+
+      {:ok, :done} ->
+        Enum.reverse(acc)
+
+      {:error, _reason} ->
+        Enum.reverse(acc)
+    end
+  end
+
+  defp fetch_row_values(stmt, num_columns, columns) do
+    for pos <- 1..num_columns do
+      column_info = Enum.at(columns, pos - 1)
+
+      case Nif.stmt_get_query_value(stmt, pos) do
+        {:ok, value} -> Type.to_elixir(value, column_info)
+        {:error, _} -> nil
+      end
+    end
   end
 
   # ============================================================

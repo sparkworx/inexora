@@ -16,7 +16,18 @@ defmodule Inexora.Nif do
 
   @type context :: reference()
   @type conn :: reference()
+  @type stmt :: reference()
   @type reason :: atom() | String.t() | {integer(), String.t(), String.t()}
+  @type column_info :: %{
+          name: String.t(),
+          oracle_type: non_neg_integer(),
+          native_type: non_neg_integer(),
+          db_size: non_neg_integer(),
+          client_size: non_neg_integer(),
+          precision: integer(),
+          scale: integer(),
+          null_ok: boolean()
+        }
 
   @doc """
   Returns the ODPI-C library version as a tuple.
@@ -151,4 +162,80 @@ defmodule Inexora.Nif do
   """
   @spec conn_get_transaction_in_progress(conn()) :: {:ok, boolean()} | {:error, reason()}
   def conn_get_transaction_in_progress(_conn), do: :erlang.nif_error(:not_loaded)
+
+  # ============================================================
+  # Statement Functions
+  # ============================================================
+
+  @doc """
+  Prepares a SQL statement for execution.
+
+  ## Parameters
+
+    * `conn` - Database connection reference
+    * `sql` - SQL statement string (binary)
+
+  ## Examples
+
+      iex> {:ok, stmt} = Inexora.Nif.stmt_prepare(conn, "SELECT 1 FROM dual")
+  """
+  @spec stmt_prepare(conn(), binary()) :: {:ok, stmt()} | {:error, reason()}
+  def stmt_prepare(_conn, _sql), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Executes a prepared statement.
+
+  Returns the number of columns for SELECT statements, or 0 for DML.
+  """
+  @spec stmt_execute(stmt()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def stmt_execute(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Fetches the next row from a SELECT statement.
+
+  Returns `{:ok, true}` if a row was fetched, `{:ok, :done}` if no more rows.
+  """
+  @spec stmt_fetch(stmt()) :: {:ok, true | :done} | {:error, reason()}
+  def stmt_fetch(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets column metadata for a query at the given position (1-based).
+
+  Returns a map with column information including name, type, size, etc.
+  """
+  @spec stmt_get_query_info(stmt(), pos_integer()) :: {:ok, column_info()} | {:error, reason()}
+  def stmt_get_query_info(_stmt, _pos), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the value at the given column position (1-based) for the current row.
+
+  The value is converted to an appropriate Elixir type based on the Oracle data type.
+  """
+  @spec stmt_get_query_value(stmt(), pos_integer()) :: {:ok, term()} | {:error, reason()}
+  def stmt_get_query_value(_stmt, _pos), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Gets the number of rows affected by a DML statement.
+  """
+  @spec stmt_get_row_count(stmt()) :: {:ok, non_neg_integer()} | {:error, reason()}
+  def stmt_get_row_count(_stmt), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Binds a value to a parameter at the given position (1-based).
+
+  ## Parameters
+
+    * `stmt` - Statement reference
+    * `pos` - Parameter position (1-based)
+    * `type` - Type hint atom: `:integer`, `:float`, `:string`, `:binary`
+    * `value` - The value to bind (or `nil` for NULL)
+  """
+  @spec stmt_bind_value_by_pos(stmt(), pos_integer(), atom(), term()) :: :ok | {:error, reason()}
+  def stmt_bind_value_by_pos(_stmt, _pos, _type, _value), do: :erlang.nif_error(:not_loaded)
+
+  @doc """
+  Closes and releases a prepared statement.
+  """
+  @spec stmt_close(stmt()) :: :ok | {:error, reason()}
+  def stmt_close(_stmt), do: :erlang.nif_error(:not_loaded)
 end
