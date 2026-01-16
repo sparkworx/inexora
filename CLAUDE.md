@@ -155,6 +155,7 @@
 - None
 
 **TODO/Upcoming**:
+- [core] OUT bind support for RETURNING INTO clauses (DPI_MODE_OUT)
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
 - [core] Cursor/streaming support for large result sets
