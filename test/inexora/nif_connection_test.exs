@@ -1,5 +1,6 @@
 defmodule Inexora.NifConnectionTest do
-  use ExUnit.Case, async: true
+  # async: false to avoid Oracle client concurrency issues
+  use ExUnit.Case, async: false
 
   alias Inexora.Nif
 

@@ -570,8 +570,13 @@ static ERL_NIF_TERM nif_stmt_get_query_info(ErlNifEnv *env, int argc, const ERL_
         enif_make_atom(env, "scale"),
         enif_make_atom(env, "null_ok")
     };
+    // Create binary for column name (not charlist)
+    ERL_NIF_TERM name_binary;
+    unsigned char *name_buf = enif_make_new_binary(env, queryInfo.nameLength, &name_binary);
+    memcpy(name_buf, queryInfo.name, queryInfo.nameLength);
+
     ERL_NIF_TERM values[] = {
-        enif_make_string_len(env, queryInfo.name, queryInfo.nameLength, ERL_NIF_LATIN1),
+        name_binary,
         enif_make_uint(env, queryInfo.typeInfo.oracleTypeNum),
         enif_make_uint(env, queryInfo.typeInfo.defaultNativeTypeNum),
         enif_make_uint(env, queryInfo.typeInfo.dbSizeInBytes),

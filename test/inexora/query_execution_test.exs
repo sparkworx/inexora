@@ -23,13 +23,15 @@ defmodule Inexora.QueryExecutionTest do
     end
 
     @tag :oracle_database
-    test "returns error for invalid SQL" do
+    test "returns error for invalid SQL on execute" do
+      # Oracle allows preparing invalid SQL - error occurs at execute time
       with {:ok, state} <- connect_test_db() do
-        query = Query.new("INVALID SQL STATEMENT")
+        query = Query.new("SELECT * FROM nonexistent_table_xyz")
 
-        {:error, error, _state} = Connection.handle_prepare(query, [], state)
+        {:error, error, _state} = Connection.handle_execute(query, [], [], state)
 
         assert %Inexora.Error{} = error
+        assert error.message =~ "ORA-" or error.oracle_code != nil
         Connection.disconnect(nil, state)
       end
     end
