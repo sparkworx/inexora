@@ -1,4 +1,4 @@
-# CLAUDE.md Template
+# CLAUDE.md
 
 ## Project Overview
 
@@ -8,7 +8,7 @@
 
 **Target Users**: Any Elixir developer that uses Oracle Databases with `Ecto`.
 
-**Current Status**: Just started
+**Current Status**: Active development - core driver functionality implemented
 
 ---
 
@@ -36,22 +36,34 @@
 ## Project Structure
 
 ```
-Standard Elixir project structure is used:
 /
 ├── mix.exs
 ├── Makefile
 ├── lib/
 │   ├── inexora.ex
 │   └── inexora/
+│       ├── connection.ex    # DBConnection implementation
+│       ├── error.ex         # Error handling
+│       ├── nif.ex           # Elixir NIF bindings
+│       ├── query.ex         # Query struct
+│       ├── result.ex        # Result struct
+│       └── type.ex          # Type conversions
 ├── c_src/
-├── test/
-│   └── sql/
-└── guides/
+│   ├── inexora_nif.c        # NIF implementation
+│   └── odpi/                # ODPI-C submodule
+├── priv/                    # Compiled NIF (.so)
+└── test/
+    ├── inexora/
+    └── support/
+        └── sql/             # Oracle test setup scripts
 ```
 
 **Key Files/Directories**:
-- `/c_src/`: C-language NIF source, plus Git submodule of ODPI-C (https://github.com/oracle/odpi)
-- `/test/sql`: Oracle SQL scripts that the developer must run to create schema and objects for integration testing. It should definitely reflect what's in ODPI-C's own /test/sql directory (https://github.com/oracle/odpi/tree/main/test/sql). ([TODO] this part may need to go into our project's `/priv` directory, but i think it's OK to start here.)
+- `/c_src/inexora_nif.c`: C NIF implementation wrapping ODPI-C functions
+- `/c_src/odpi/`: Git submodule of ODPI-C (https://github.com/oracle/odpi)
+- `/lib/inexora/connection.ex`: DBConnection behaviour implementation
+- `/lib/inexora/nif.ex`: Elixir function stubs that call into the NIF
+- `/test/support/sql/`: Oracle SQL scripts for test schema setup (adapted from ODPI-C)
 
 ---
 
@@ -114,20 +126,31 @@ Standard Elixir project structure is used:
 ## Current Implementation Status
 
 **Completed**:
-- nothing yet
+- [core] NIF infrastructure with ODPI-C integration
+- [core] Context creation/destruction and client version retrieval
+- [core] Database connections (create, close, ping, health check)
+- [core] Transaction support (begin, commit, rollback)
+- [core] SQL statement preparation and execution
+- [core] Result set fetching with column metadata
+- [core] Parameter binding with positional placeholders (:1, :2, etc.)
+- [datatype] VARCHAR2/CHAR → binary (String)
+- [datatype] NUMBER → integer/float
+- [datatype] DATE → Date
+- [datatype] TIMESTAMP/TIMESTAMP_TZ/TIMESTAMP_LTZ → NaiveDateTime
+- [datatype] NULL handling
 
 **In Progress**:
-- initial development and driver structure
+- Testing with live Oracle database
 
 **TODO/Upcoming**:
-- [core] implement context support and driver initialization
-- [core] implement database connections & properties
-- [core] implement SQL statements & execution
-- [core] implement result set handling including metadata
-- [datatype] implement VARCHAR2/NVARCHAR2
-- [datatype] implement NUMBER & friends
-- [datatype] implement DATE/TIMESTAMP & friends
-- [ecto] implement Ecto adapter functions
+- [datatype] CLOB/BLOB support
+- [datatype] Decimal precision for NUMBER
+- [datatype] INTERVAL types
+- [core] Cursor/streaming support for large result sets
+- [core] Named parameter binding (:name style)
+- [core] Batch/array operations
+- [ecto] Implement Ecto adapter
+- [ecto] Implement Ecto migrations
 
 ---
 
@@ -142,7 +165,18 @@ Standard Elixir project structure is used:
 5. Run tests: `mix test`
 ```
 
-### Environment Variables (TBD)
+### Environment Variables
+
+For running integration tests against Oracle:
+- `ORACLE_USER` - Database username (default: `test_user`)
+- `ORACLE_PASSWORD` - Database password (default: `test_password`)
+- `ORACLE_DATABASE` - Connection string (default: `localhost:1521/FREEPDB1`)
+
+Tests tagged `:oracle_database` are excluded by default. To run them:
+```bash
+# Set env vars and remove exclusion, or use:
+ORACLE_DATABASE_AVAILABLE=1 mix test
+```
 
 ---
 
