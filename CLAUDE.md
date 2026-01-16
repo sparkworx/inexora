@@ -140,9 +140,12 @@
 - [datatype] CLOB → binary (String)
 - [datatype] BLOB → binary (raw)
 - [datatype] NULL handling
+- [ecto] Ecto adapter (`Ecto.Adapters.Oracle`)
+- [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
+- [ecto] DDL generation (CREATE TABLE, DROP TABLE, ALTER TABLE, indexes, constraints)
 
 **In Progress**:
-- Ecto adapter implementation
+- None
 
 **TODO/Upcoming**:
 - [datatype] INTERVAL types
@@ -150,8 +153,8 @@
 - [core] Cursor/streaming support for large result sets
 - [core] Named parameter binding (:name style)
 - [core] Batch/array operations
-- [ecto] Implement Ecto adapter
-- [ecto] Implement Ecto migrations
+- [ecto] Implement Ecto migrations (runtime testing)
+- [ecto] Integration tests with Ecto Repo
 
 ---
 

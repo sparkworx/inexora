@@ -24,7 +24,9 @@ defmodule Inexora.MixProject do
     [
       {:elixir_make, "~> 0.8", runtime: false},
       {:db_connection, "~> 2.6"},
-      {:decimal, "~> 2.0"}
+      {:decimal, "~> 2.0"},
+      {:ecto, "~> 3.12"},
+      {:ecto_sql, "~> 3.12"}
     ]
   end
 end
