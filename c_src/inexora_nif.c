@@ -162,9 +162,14 @@ static ERL_NIF_TERM nif_context_create(ErlNifEnv *env, int argc, const ERL_NIF_T
     dpiErrorInfo errorInfo;
     dpiContext *context = NULL;
 
+    // Initialize context params with driver name for Oracle session identification
+    dpiContextCreateParams ctxParams;
+    memset(&ctxParams, 0, sizeof(dpiContextCreateParams));
+    ctxParams.defaultDriverName = "Inexora : 0.1.0";
+
     // Create context using ODPI-C
     if (dpiContext_createWithParams(DPI_MAJOR_VERSION, DPI_MINOR_VERSION,
-            NULL, &context, &errorInfo) < 0) {
+            &ctxParams, &context, &errorInfo) < 0) {
         return make_dpi_error(env, &errorInfo);
     }
 
@@ -270,13 +275,22 @@ static ERL_NIF_TERM nif_conn_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM
         return make_error_tuple(env, "invalid_connect_string");
     }
 
+    // Initialize common params with threaded mode for NIF thread safety
+    dpiCommonCreateParams commonParams;
+    if (dpiContext_initCommonCreateParams(*ctx_res, &commonParams) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(*ctx_res, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+    commonParams.createMode = DPI_MODE_CREATE_THREADED;
+
     // Create connection
     dpiConn *conn = NULL;
     if (dpiConn_create(*ctx_res,
             (const char *)username_bin.data, username_bin.size,
             (const char *)password_bin.data, password_bin.size,
             (const char *)connect_string_bin.data, connect_string_bin.size,
-            NULL, NULL, &conn) < 0) {
+            &commonParams, NULL, &conn) < 0) {
         dpiErrorInfo errorInfo;
         dpiContext_getError(*ctx_res, &errorInfo);
         return make_dpi_error(env, &errorInfo);
