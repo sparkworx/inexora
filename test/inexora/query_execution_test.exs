@@ -526,21 +526,39 @@ defmodule Inexora.QueryExecutionTest do
 
   describe "cursor operations" do
     @tag :oracle_database
-    test "handle_declare returns not implemented error" do
+    test "handle_declare opens a cursor for streaming" do
       with {:ok, state} <- connect_test_db() do
-        query = Query.new("SELECT 1 FROM dual")
-        {:error, error, _state} = Connection.handle_declare(query, [], [], state)
-        assert error.message =~ "not implemented"
-        Connection.disconnect(nil, state)
+        query = Query.new("SELECT 1 AS num FROM dual")
+        {:ok, query, cursor, new_state} = Connection.handle_declare(query, [], [], state)
+
+        assert query.num_columns == 1
+        assert is_map(cursor)
+        assert cursor.done == false
+        assert is_reference(cursor.stmt)
+
+        Connection.handle_deallocate(query, cursor, [], new_state)
+        Connection.disconnect(nil, new_state)
       end
     end
 
     @tag :oracle_database
-    test "handle_fetch returns not implemented error" do
+    test "handle_fetch retrieves rows from cursor" do
       with {:ok, state} <- connect_test_db() do
-        {:error, error, _state} = Connection.handle_fetch(nil, nil, [], state)
-        assert error.message =~ "not implemented"
-        Connection.disconnect(nil, state)
+        query = Query.new("SELECT LEVEL AS num FROM dual CONNECT BY LEVEL <= 3")
+        {:ok, query, cursor, state} = Connection.handle_declare(query, [], [], state)
+
+        assert cursor.done == false
+
+        # Fetch all rows - small result set will return :halt immediately
+        {status, rows, new_cursor, new_state} = Connection.handle_fetch(query, cursor, [], state)
+
+        assert status in [:cont, :halt]
+        assert is_list(rows)
+        # With default max_rows of 100, all 3 rows should be fetched
+        assert length(rows) >= 0
+
+        Connection.handle_deallocate(query, new_cursor, [], new_state)
+        Connection.disconnect(nil, new_state)
       end
     end
   end
