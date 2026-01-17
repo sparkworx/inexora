@@ -163,6 +163,7 @@
 **TODO/Upcoming**:
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
+- [core] Use auto-incrementing ID columns for any tables created by tests
 - [ecto] Implement Ecto migrations (runtime testing)
 - [ecto] Batch insert_all with RETURNING (requires special adapter handling)
 
