@@ -17,6 +17,10 @@ CFLAGS = -O2 -Wall -Wextra -Wno-unused-parameter
 CFLAGS += -I$(ERTS_INCLUDE_DIR)
 CFLAGS += -Ic_src/odpi/include
 
+# Memory allocation shim - redirect malloc/free to enif_alloc/enif_free
+# This is included FIRST before all other headers via -include flag
+CFLAGS += -include c_src/inexora_mem.h
+
 # Platform-specific settings
 ifeq ($(UNAME_S),Darwin)
 	# macOS
