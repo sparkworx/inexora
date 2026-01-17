@@ -20,6 +20,7 @@ typedef struct {
 
 // Statement resource struct - holds context, connection, and statement
 typedef struct {
+    InexoraConnection *conn_resource;  // Reference to connection resource (prevents use-after-free)
     dpiContext *context;
     dpiConn *conn;
     dpiStmt *stmt;
@@ -27,6 +28,7 @@ typedef struct {
 
 // Variable resource struct - holds variable for array/batch operations
 typedef struct {
+    InexoraConnection *conn_resource;  // Reference to connection resource (prevents use-after-free)
     dpiContext *context;
     dpiConn *conn;
     dpiVar *var;
@@ -110,7 +112,11 @@ static void statement_destructor(ErlNifEnv *env, void *obj) {
         dpiStmt_release(stmt_res->stmt);
         stmt_res->stmt = NULL;
     }
-    // Note: We don't release conn/context here as they're managed separately
+    // Release our reference to the connection resource
+    if (stmt_res->conn_resource != NULL) {
+        enif_release_resource(stmt_res->conn_resource);
+        stmt_res->conn_resource = NULL;
+    }
 }
 
 // Variable destructor (called when Erlang garbage collects the resource)
@@ -121,7 +127,11 @@ static void variable_destructor(ErlNifEnv *env, void *obj) {
         dpiVar_release(var_res->var);
         var_res->var = NULL;
     }
-    // Note: We don't release conn/context here as they're managed separately
+    // Release our reference to the connection resource
+    if (var_res->conn_resource != NULL) {
+        enif_release_resource(var_res->conn_resource);
+        var_res->conn_resource = NULL;
+    }
 }
 
 // ============================================================
@@ -504,6 +514,9 @@ static ERL_NIF_TERM nif_stmt_prepare(ErlNifEnv *env, int argc, const ERL_NIF_TER
     }
 
     InexoraStatement *stmt_res = enif_alloc_resource(STATEMENT_RESOURCE_TYPE, sizeof(InexoraStatement));
+    // Keep a reference to the connection resource to prevent use-after-free
+    enif_keep_resource(conn_res);
+    stmt_res->conn_resource = conn_res;
     stmt_res->context = conn_res->context;
     stmt_res->conn = conn_res->conn;
     stmt_res->stmt = stmt;
@@ -1574,6 +1587,9 @@ static ERL_NIF_TERM nif_conn_new_var(ErlNifEnv *env, int argc, const ERL_NIF_TER
 
     // Wrap variable in Erlang resource
     InexoraVariable *var_res = enif_alloc_resource(VARIABLE_RESOURCE_TYPE, sizeof(InexoraVariable));
+    // Keep a reference to the connection resource to prevent use-after-free
+    enif_keep_resource(conn_res);
+    var_res->conn_resource = conn_res;
     var_res->context = conn_res->context;
     var_res->conn = conn_res->conn;
     var_res->var = var;
