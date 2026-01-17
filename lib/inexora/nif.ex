@@ -42,8 +42,13 @@ defmodule Inexora.Nif do
   @spec odpi_version() :: {:ok, {integer(), integer(), integer()}} | {:error, reason()}
   def odpi_version, do: :erlang.nif_error(:not_loaded)
 
+  @type context_option ::
+          {:driver_name, String.t()}
+          | {:oracle_client_lib_dir, String.t()}
+          | {:oracle_client_config_dir, String.t()}
+
   @doc """
-  Creates a new ODPI-C context.
+  Creates a new ODPI-C context with default options.
 
   Note: This will fail if Oracle Instant Client is not installed and
   accessible in the library path.
@@ -55,7 +60,41 @@ defmodule Inexora.Nif do
       true
   """
   @spec context_create() :: {:ok, context()} | {:error, reason()}
-  def context_create, do: :erlang.nif_error(:not_loaded)
+  def context_create, do: context_create([])
+
+  @doc """
+  Creates a new ODPI-C context with the given options.
+
+  Note: This will fail if Oracle Instant Client is not installed and
+  accessible in the library path.
+
+  ## Options
+
+    * `:driver_name` - Custom driver name that appears in Oracle's
+      `V$SESSION_CONNECT_INFO.CLIENT_DRIVER`. Defaults to `"Inexora : <version>"`.
+
+    * `:oracle_client_lib_dir` - Path to the Oracle Client library directory.
+      If not set, the standard search path is used.
+
+    * `:oracle_client_config_dir` - Path to the Oracle Client configuration
+      directory (where `tnsnames.ora`, `sqlnet.ora`, etc. are located).
+      If not set, the standard search path is used.
+
+  ## Examples
+
+      # With custom driver name
+      iex> {:ok, ctx} = Inexora.Nif.context_create(driver_name: "MyApp : 1.0.0")
+      iex> is_reference(ctx)
+      true
+
+      # With Oracle client paths
+      {:ok, ctx} = Inexora.Nif.context_create(
+        oracle_client_lib_dir: "/opt/oracle/instantclient_21_1",
+        oracle_client_config_dir: "/opt/oracle/network/admin"
+      )
+  """
+  @spec context_create([context_option()]) :: {:ok, context()} | {:error, reason()}
+  def context_create(_opts), do: :erlang.nif_error(:not_loaded)
 
   @doc """
   Destroys a ODPI-C context.

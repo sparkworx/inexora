@@ -46,6 +46,11 @@ static ERL_NIF_TERM ATOM_TRUE;
 static ERL_NIF_TERM ATOM_FALSE;
 static ERL_NIF_TERM ATOM_DONE;
 
+// Context option atoms
+static ERL_NIF_TERM ATOM_DRIVER_NAME;
+static ERL_NIF_TERM ATOM_ORACLE_CLIENT_LIB_DIR;
+static ERL_NIF_TERM ATOM_ORACLE_CLIENT_CONFIG_DIR;
+
 // Helper: make {:ok, value} tuple
 static ERL_NIF_TERM make_ok_tuple(ErlNifEnv *env, ERL_NIF_TERM value) {
     return enif_make_tuple2(env, ATOM_OK, value);
@@ -81,6 +86,104 @@ static ERL_NIF_TERM make_dpi_error(ErlNifEnv *env, dpiErrorInfo *errorInfo) {
             make_binary_string(env, errorInfo->fnName ? errorInfo->fnName : "unknown"),
             make_binary_string_len(env, errorInfo->message, errorInfo->messageLength)
         ));
+}
+
+// ============================================================
+// Context Options Parsing
+// ============================================================
+
+// Struct to hold parsed context creation options
+typedef struct {
+    char *driver_name;
+    char *oracle_client_lib_dir;
+    char *oracle_client_config_dir;
+} ContextOptions;
+
+// Initialize context options struct
+static void context_options_init(ContextOptions *opts) {
+    opts->driver_name = NULL;
+    opts->oracle_client_lib_dir = NULL;
+    opts->oracle_client_config_dir = NULL;
+}
+
+// Free allocated memory in context options struct
+static void context_options_free(ContextOptions *opts) {
+    if (opts->driver_name) {
+        enif_free(opts->driver_name);
+        opts->driver_name = NULL;
+    }
+    if (opts->oracle_client_lib_dir) {
+        enif_free(opts->oracle_client_lib_dir);
+        opts->oracle_client_lib_dir = NULL;
+    }
+    if (opts->oracle_client_config_dir) {
+        enif_free(opts->oracle_client_config_dir);
+        opts->oracle_client_config_dir = NULL;
+    }
+}
+
+// Helper: allocate and copy binary to null-terminated string
+static char *binary_to_cstring(ErlNifBinary *bin) {
+    char *str = enif_alloc(bin->size + 1);
+    if (str) {
+        memcpy(str, bin->data, bin->size);
+        str[bin->size] = '\0';
+    }
+    return str;
+}
+
+// Parse context options from keyword list
+// Returns 0 on success, sets error_term on failure
+static int parse_context_options(ErlNifEnv *env, ERL_NIF_TERM list,
+                                  ContextOptions *opts, ERL_NIF_TERM *error_term) {
+    ERL_NIF_TERM head, tail;
+    ErlNifBinary bin;
+
+    while (enif_get_list_cell(env, list, &head, &tail)) {
+        int arity;
+        const ERL_NIF_TERM *tuple;
+
+        if (enif_get_tuple(env, head, &arity, &tuple) && arity == 2) {
+            ERL_NIF_TERM key = tuple[0];
+            ERL_NIF_TERM value = tuple[1];
+
+            if (enif_is_identical(key, ATOM_DRIVER_NAME)) {
+                if (!enif_inspect_binary(env, value, &bin)) {
+                    *error_term = make_error_tuple(env, "driver_name_must_be_binary");
+                    return -1;
+                }
+                opts->driver_name = binary_to_cstring(&bin);
+                if (!opts->driver_name) {
+                    *error_term = make_error_tuple(env, "allocation_failed");
+                    return -1;
+                }
+            } else if (enif_is_identical(key, ATOM_ORACLE_CLIENT_LIB_DIR)) {
+                if (!enif_inspect_binary(env, value, &bin)) {
+                    *error_term = make_error_tuple(env, "oracle_client_lib_dir_must_be_binary");
+                    return -1;
+                }
+                opts->oracle_client_lib_dir = binary_to_cstring(&bin);
+                if (!opts->oracle_client_lib_dir) {
+                    *error_term = make_error_tuple(env, "allocation_failed");
+                    return -1;
+                }
+            } else if (enif_is_identical(key, ATOM_ORACLE_CLIENT_CONFIG_DIR)) {
+                if (!enif_inspect_binary(env, value, &bin)) {
+                    *error_term = make_error_tuple(env, "oracle_client_config_dir_must_be_binary");
+                    return -1;
+                }
+                opts->oracle_client_config_dir = binary_to_cstring(&bin);
+                if (!opts->oracle_client_config_dir) {
+                    *error_term = make_error_tuple(env, "allocation_failed");
+                    return -1;
+                }
+            }
+            // Ignore unknown options for forward compatibility
+        }
+        list = tail;
+    }
+
+    return 0;
 }
 
 // Context destructor (called when Erlang garbage collects the resource)
@@ -154,22 +257,41 @@ static ERL_NIF_TERM nif_odpi_version(ErlNifEnv *env, int argc, const ERL_NIF_TER
 }
 
 // Create ODPI-C context
-// Returns: {:ok, context_ref} | {:error, reason}
+// context_create(opts) -> {:ok, context_ref} | {:error, reason}
+// opts is a keyword list: [{:driver_name, "..."}, {:oracle_client_lib_dir, "..."}, ...]
 static ERL_NIF_TERM nif_context_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    (void)argc;
-    (void)argv;
+    if (argc != 1) {
+        return enif_make_badarg(env);
+    }
 
-    dpiErrorInfo errorInfo;
-    dpiContext *context = NULL;
+    // Parse options from keyword list
+    ContextOptions opts;
+    context_options_init(&opts);
 
-    // Initialize context params with driver name for Oracle session identification
+    ERL_NIF_TERM error_term;
+    if (parse_context_options(env, argv[0], &opts, &error_term) < 0) {
+        context_options_free(&opts);
+        return error_term;
+    }
+
+    // Initialize ODPI-C context params
     dpiContextCreateParams ctxParams;
     memset(&ctxParams, 0, sizeof(dpiContextCreateParams));
-    ctxParams.defaultDriverName = "Inexora : 0.1.0";
+
+    ctxParams.defaultDriverName = opts.driver_name ? opts.driver_name : "Inexora : 0.1.0";
+    ctxParams.oracleClientLibDir = opts.oracle_client_lib_dir;
+    ctxParams.oracleClientConfigDir = opts.oracle_client_config_dir;
 
     // Create context using ODPI-C
-    if (dpiContext_createWithParams(DPI_MAJOR_VERSION, DPI_MINOR_VERSION,
-            &ctxParams, &context, &errorInfo) < 0) {
+    dpiErrorInfo errorInfo;
+    dpiContext *context = NULL;
+    int result = dpiContext_createWithParams(DPI_MAJOR_VERSION, DPI_MINOR_VERSION,
+            &ctxParams, &context, &errorInfo);
+
+    // Free options (no longer needed after context creation)
+    context_options_free(&opts);
+
+    if (result < 0) {
         return make_dpi_error(env, &errorInfo);
     }
 
@@ -177,10 +299,10 @@ static ERL_NIF_TERM nif_context_create(ErlNifEnv *env, int argc, const ERL_NIF_T
     dpiContext **ctx_res = enif_alloc_resource(CONTEXT_RESOURCE_TYPE, sizeof(dpiContext *));
     *ctx_res = context;
 
-    ERL_NIF_TERM result = enif_make_resource(env, ctx_res);
+    ERL_NIF_TERM ctx_term = enif_make_resource(env, ctx_res);
     enif_release_resource(ctx_res);
 
-    return make_ok_tuple(env, result);
+    return make_ok_tuple(env, ctx_term);
 }
 
 // Destroy ODPI-C context
@@ -2292,7 +2414,7 @@ static ERL_NIF_TERM nif_stmt_get_prefetch_rows(ErlNifEnv *env, int argc, const E
 static ErlNifFunc nif_funcs[] = {
     // Context functions
     {"odpi_version", 0, nif_odpi_version, 0},
-    {"context_create", 0, nif_context_create, 0},
+    {"context_create", 1, nif_context_create, 0},
     {"context_destroy", 1, nif_context_destroy, 0},
     {"get_client_version", 1, nif_get_client_version, 0},
     // Connection functions (network I/O marked as dirty)
@@ -2350,6 +2472,11 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     ATOM_TRUE = enif_make_atom(env, "true");
     ATOM_FALSE = enif_make_atom(env, "false");
     ATOM_DONE = enif_make_atom(env, "done");
+
+    // Context option atoms
+    ATOM_DRIVER_NAME = enif_make_atom(env, "driver_name");
+    ATOM_ORACLE_CLIENT_LIB_DIR = enif_make_atom(env, "oracle_client_lib_dir");
+    ATOM_ORACLE_CLIENT_CONFIG_DIR = enif_make_atom(env, "oracle_client_config_dir");
 
     // Register resource types
     CONTEXT_RESOURCE_TYPE = enif_open_resource_type(
