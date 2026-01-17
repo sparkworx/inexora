@@ -230,6 +230,9 @@ defmodule Inexora.Connection do
             end
           end
 
+        # Define NUMBER columns to be fetched as bytes for precision
+        define_number_columns_as_bytes(stmt, columns)
+
         cursor = %{
           stmt: stmt,
           columns: columns,
@@ -357,6 +360,9 @@ defmodule Inexora.Connection do
         end
       end
 
+    # Define NUMBER columns to be fetched as bytes for precision
+    define_number_columns_as_bytes(stmt, columns)
+
     column_names = Enum.map(columns, & &1[:name])
 
     # Fetch all rows
@@ -409,6 +415,22 @@ defmodule Inexora.Connection do
   # ============================================================
   # Helper Functions
   # ============================================================
+
+  # Oracle NUMBER type constant from dpi.h
+  @oracle_type_number 2010
+
+  # Define NUMBER columns to be fetched as bytes (strings) to preserve full precision.
+  # Without this, ODPI-C may return large numbers as doubles, losing precision.
+  defp define_number_columns_as_bytes(stmt, columns) do
+    columns
+    |> Enum.with_index(1)
+    |> Enum.each(fn {col, pos} ->
+      if col[:oracle_type] == @oracle_type_number do
+        # 128 bytes is enough for Oracle NUMBER(38) with sign and decimal point
+        Nif.stmt_define_as_bytes(stmt, pos, 128)
+      end
+    end)
+  end
 
   defp build_connect_string(opts) do
     case Keyword.get(opts, :database) do

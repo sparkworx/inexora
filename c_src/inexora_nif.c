@@ -1633,11 +1633,20 @@ static ERL_NIF_TERM nif_stmt_define_as_bytes(ErlNifEnv *env, int argc, const ERL
         return make_error_tuple(env, "invalid_max_size");
     }
 
+    // Get the current fetch array size - the variable must match or exceed this
+    uint32_t fetchArraySize;
+    if (dpiStmt_getFetchArraySize(stmt_res->stmt, &fetchArraySize) < 0) {
+        dpiErrorInfo errorInfo;
+        dpiContext_getError(stmt_res->context, &errorInfo);
+        return make_dpi_error(env, &errorInfo);
+    }
+
     // Create a variable to fetch NUMBER as bytes (string)
+    // Use fetchArraySize for maxArraySize to match the statement's fetch array size
     dpiVar *var;
     dpiData *data;
     if (dpiConn_newVar(stmt_res->conn, DPI_ORACLE_TYPE_NUMBER, DPI_NATIVE_TYPE_BYTES,
-                       1, max_size, 0, 0, NULL, &var, &data) < 0) {
+                       fetchArraySize, max_size, 0, 0, NULL, &var, &data) < 0) {
         dpiErrorInfo errorInfo;
         dpiContext_getError(stmt_res->context, &errorInfo);
         return make_dpi_error(env, &errorInfo);
