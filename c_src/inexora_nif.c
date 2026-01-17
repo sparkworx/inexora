@@ -16,6 +16,8 @@ static ErlNifResourceType *VARIABLE_RESOURCE_TYPE;
 typedef struct {
     dpiContext *context;
     dpiConn *conn;
+    volatile int closed;  // Flag to indicate connection has been closed (for thread safety)
+    ErlNifMutex *mutex;   // Mutex to protect connection close operations
 } InexoraConnection;
 
 // Statement resource struct - holds context, connection, and statement
@@ -200,9 +202,25 @@ static void context_destructor(ErlNifEnv *env, void *obj) {
 static void connection_destructor(ErlNifEnv *env, void *obj) {
     (void)env;
     InexoraConnection *conn_res = (InexoraConnection *)obj;
+
+    // Lock the mutex to ensure no statement/variable destructors are in progress
+    if (conn_res->mutex != NULL) {
+        enif_mutex_lock(conn_res->mutex);
+    }
+
+    // Mark as closed FIRST before releasing.
+    // This prevents statement/variable destructors from trying to use the connection.
+    __atomic_store_n(&conn_res->closed, 1, __ATOMIC_RELEASE);
+
     if (conn_res->conn != NULL) {
         dpiConn_release(conn_res->conn);
         conn_res->conn = NULL;
+    }
+
+    if (conn_res->mutex != NULL) {
+        enif_mutex_unlock(conn_res->mutex);
+        enif_mutex_destroy(conn_res->mutex);
+        conn_res->mutex = NULL;
     }
     // Note: We don't destroy the context here as it's managed separately
 }
@@ -211,10 +229,24 @@ static void connection_destructor(ErlNifEnv *env, void *obj) {
 static void statement_destructor(ErlNifEnv *env, void *obj) {
     (void)env;
     InexoraStatement *stmt_res = (InexoraStatement *)obj;
-    if (stmt_res->stmt != NULL) {
-        dpiStmt_release(stmt_res->stmt);
-        stmt_res->stmt = NULL;
+
+    // Only release the statement if the connection is still valid.
+    // When a connection is closed, all associated statements are implicitly
+    // invalidated by Oracle. Attempting to release them causes a crash.
+    // Use mutex to prevent race with connection close.
+    if (stmt_res->stmt != NULL &&
+        stmt_res->conn_resource != NULL &&
+        stmt_res->conn_resource->mutex != NULL) {
+
+        enif_mutex_lock(stmt_res->conn_resource->mutex);
+        // Double-check closed flag while holding mutex
+        if (!__atomic_load_n(&stmt_res->conn_resource->closed, __ATOMIC_ACQUIRE)) {
+            dpiStmt_release(stmt_res->stmt);
+        }
+        enif_mutex_unlock(stmt_res->conn_resource->mutex);
     }
+    stmt_res->stmt = NULL;
+
     // Release our reference to the connection resource
     if (stmt_res->conn_resource != NULL) {
         enif_release_resource(stmt_res->conn_resource);
@@ -226,10 +258,24 @@ static void statement_destructor(ErlNifEnv *env, void *obj) {
 static void variable_destructor(ErlNifEnv *env, void *obj) {
     (void)env;
     InexoraVariable *var_res = (InexoraVariable *)obj;
-    if (var_res->var != NULL) {
-        dpiVar_release(var_res->var);
-        var_res->var = NULL;
+
+    // Only release the variable if the connection is still valid.
+    // When a connection is closed, all associated variables are implicitly
+    // invalidated by Oracle. Attempting to release them causes a crash.
+    // Use mutex to prevent race with connection close.
+    if (var_res->var != NULL &&
+        var_res->conn_resource != NULL &&
+        var_res->conn_resource->mutex != NULL) {
+
+        enif_mutex_lock(var_res->conn_resource->mutex);
+        // Double-check closed flag while holding mutex
+        if (!__atomic_load_n(&var_res->conn_resource->closed, __ATOMIC_ACQUIRE)) {
+            dpiVar_release(var_res->var);
+        }
+        enif_mutex_unlock(var_res->conn_resource->mutex);
     }
+    var_res->var = NULL;
+
     // Release our reference to the connection resource
     if (var_res->conn_resource != NULL) {
         enif_release_resource(var_res->conn_resource);
@@ -422,6 +468,8 @@ static ERL_NIF_TERM nif_conn_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     InexoraConnection *conn_res = enif_alloc_resource(CONNECTION_RESOURCE_TYPE, sizeof(InexoraConnection));
     conn_res->context = *ctx_res;
     conn_res->conn = conn;
+    conn_res->closed = 0;  // Initialize closed flag
+    conn_res->mutex = enif_mutex_create("inexora_conn_mutex");  // Create mutex for thread safety
 
     ERL_NIF_TERM result = enif_make_resource(env, conn_res);
     enif_release_resource(conn_res);
@@ -441,11 +489,26 @@ static ERL_NIF_TERM nif_conn_close(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
         return make_error_tuple(env, "invalid_connection");
     }
 
-    if (conn_res->conn != NULL) {
+    // Lock the mutex to ensure no statement/variable destructors are in progress
+    if (conn_res->mutex != NULL) {
+        enif_mutex_lock(conn_res->mutex);
+    }
+
+    if (conn_res->conn != NULL && !__atomic_load_n(&conn_res->closed, __ATOMIC_ACQUIRE)) {
+        // Mark as closed atomically FIRST to prevent statement/variable destructors from
+        // trying to release resources after we close the connection.
+        // This is critical for thread safety - statements may be garbage collected
+        // on different scheduler threads while we're closing the connection.
+        __atomic_store_n(&conn_res->closed, 1, __ATOMIC_RELEASE);
+
         // Close with default mode
         dpiConn_close(conn_res->conn, DPI_MODE_CONN_CLOSE_DEFAULT, NULL, 0);
         dpiConn_release(conn_res->conn);
         conn_res->conn = NULL;
+    }
+
+    if (conn_res->mutex != NULL) {
+        enif_mutex_unlock(conn_res->mutex);
     }
 
     return ATOM_OK;
