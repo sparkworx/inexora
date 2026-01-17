@@ -129,12 +129,12 @@ defmodule Ecto.Adapters.Oracle.Connection do
           intersperse_map(rows, ?,, fn _ -> "DEFAULT" end),
           ")",
           on_conflict(on_conflict, header),
-          returning(returning)
+          returning(returning, 1)
         ]
 
       # Single row - standard INSERT
       num_rows == 1 ->
-        {values, _counter} = insert_each(hd(rows), 1, placeholders)
+        {values, counter} = insert_each(hd(rows), 1, placeholders)
         [
           "INSERT INTO ",
           table_name,
@@ -144,7 +144,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
           values,
           ")",
           on_conflict(on_conflict, header),
-          returning(returning)
+          returning(returning, counter)
         ]
 
       # Multi-row without RETURNING - use INSERT ALL
@@ -158,7 +158,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
       # Multi-row with RETURNING - generate single-row INSERT for batch execution
       # The Ecto adapter will handle batch execution separately
       true ->
-        {values, _counter} = insert_each(hd(rows), 1, placeholders)
+        {values, counter} = insert_each(hd(rows), 1, placeholders)
         [
           "INSERT INTO ",
           table_name,
@@ -168,7 +168,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
           values,
           ")",
           on_conflict(on_conflict, header),
-          returning(returning)
+          returning(returning, counter)
         ]
     end
   end
@@ -219,7 +219,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
         {[quote_name(field), " = :" | Integer.to_string(counter)], counter + 1}
       end)
 
-    {filters, _count} =
+    {filters, final_count} =
       intersperse_reduce(filters, " AND ", count, fn
         {field, nil}, counter ->
           {[quote_name(field), " IS NULL"], counter}
@@ -235,7 +235,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
       fields,
       " WHERE ",
       filters,
-      returning(returning)
+      returning(returning, final_count)
     ]
   end
 
@@ -245,7 +245,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
 
   @impl true
   def delete(prefix, table, filters, returning) do
-    {filters, _count} =
+    {filters, final_count} =
       intersperse_reduce(filters, " AND ", 1, fn
         {field, nil}, counter ->
           {[quote_name(field), " IS NULL"], counter}
@@ -259,7 +259,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
       quote_table(prefix, table),
       " WHERE ",
       filters,
-      returning(returning)
+      returning(returning, final_count)
     ]
   end
 
@@ -652,11 +652,11 @@ defmodule Ecto.Adapters.Oracle.Connection do
     [?(, expr(expr, sources, query), ?)]
   end
 
-  defp returning([]), do: []
+  defp returning([], _start_counter), do: []
 
-  defp returning(fields) do
+  defp returning(fields, start_counter) do
     [" RETURNING ", intersperse_map(fields, ", ", &quote_name/1), " INTO ",
-     intersperse_map(Enum.with_index(fields, 1), ", ", fn {_, i} ->
+     intersperse_map(Enum.with_index(fields, start_counter), ", ", fn {_, i} ->
        [":", Integer.to_string(i)]
      end)]
   end
