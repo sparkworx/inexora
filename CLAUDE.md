@@ -228,3 +228,4 @@ When running multi-line scripts or code snippets:
 - Write scripts to `tmp/` in the project root with descriptive names (e.g., `tmp/test_boolean_encoding.exs`)
 - Execute the file directly (e.g., `mix run tmp/test_boolean_encoding.exs`)
 - Do NOT auto-delete tmp files — leave them for debugging
+- Always use `--no-recurse-submodules` when doing `git push` to origin
