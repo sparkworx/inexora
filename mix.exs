@@ -50,8 +50,7 @@ defmodule Inexora.MixProject do
       extras: ["README.md", "LICENSE"],
       groups_for_modules: [
         "Ecto Adapter": [
-          Ecto.Adapters.Oracle,
-          Ecto.Adapters.Oracle.Connection
+          Ecto.Adapters.Oracle
         ],
         Driver: [
           Inexora,
