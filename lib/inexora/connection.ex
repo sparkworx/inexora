@@ -173,6 +173,12 @@ defmodule Inexora.Connection do
   end
 
   @impl DBConnection
+  def handle_execute(%Query{statement: stmt, returning: returning} = query, params, _opts, state)
+      when is_reference(stmt) and returning != nil do
+    # DML with RETURNING INTO - use Variable API for output binds
+    execute_with_returning(query, params, state)
+  end
+
   def handle_execute(%Query{statement: stmt} = query, params, _opts, state) when is_reference(stmt) do
     with :ok <- bind_params(stmt, params),
          {:ok, num_columns} <- Nif.stmt_execute(stmt) do
@@ -382,6 +388,178 @@ defmodule Inexora.Connection do
         {:error, Error.from_odpi(reason), state}
     end
   end
+
+  # Execute DML with RETURNING INTO clause using Variable API
+  defp execute_with_returning(
+         %Query{statement: stmt, returning: %{columns: columns, start_pos: start_pos}} = query,
+         params,
+         %__MODULE__{conn: conn} = state
+       ) do
+    # Create input variables and bind input parameters
+    input_vars = create_input_variables(conn, params)
+
+    case bind_input_variables(stmt, input_vars) do
+      :ok ->
+        # Create output variables for RETURNING columns
+        output_vars = create_output_variables(conn, columns)
+
+        case bind_output_variables(stmt, output_vars, start_pos) do
+          :ok ->
+            # Execute the statement
+            case Nif.stmt_execute(stmt) do
+              {:ok, _num_columns} ->
+                # Get row count
+                {:ok, row_count} = Nif.stmt_get_row_count(stmt)
+
+                # Retrieve returned values
+                returned_values = retrieve_returned_values(output_vars)
+
+                # Clean up variables
+                cleanup_variables(input_vars ++ output_vars)
+
+                # Build result with returned values
+                # Ecto expects rows as [[val1, val2, ...]] format
+                column_names = Enum.map(columns, fn {name, _type} -> Atom.to_string(name) end)
+                rows = if returned_values == [], do: [], else: [returned_values]
+
+                result = Result.new_dml_returning(row_count, column_names, rows)
+                {:ok, query, result, state}
+
+              {:error, reason} ->
+                cleanup_variables(input_vars ++ output_vars)
+                {:error, Error.from_odpi(reason), state}
+            end
+
+          {:error, reason} ->
+            cleanup_variables(input_vars ++ output_vars)
+            {:error, Error.from_odpi(reason), state}
+        end
+
+      {:error, reason} ->
+        cleanup_variables(input_vars)
+        {:error, Error.from_odpi(reason), state}
+    end
+  end
+
+  # Create input variables for parameters using Variable API
+  defp create_input_variables(conn, params) when is_list(params) do
+    params
+    |> Enum.with_index(1)
+    |> Enum.map(fn {value, pos} ->
+      {oracle_type, native_type, size} = odpi_types_for_value(value)
+      {:ok, var} = Nif.conn_new_var(conn, oracle_type, native_type, 1, size)
+      set_variable_value(var, value)
+      :ok = Nif.var_set_num_elements(var, 1)
+      {pos, var}
+    end)
+  end
+
+  defp create_input_variables(_conn, _params), do: []
+
+  # Create output variables for RETURNING columns
+  defp create_output_variables(conn, columns) do
+    Enum.map(columns, fn {_name, type} ->
+      {oracle_type, native_type, size} = odpi_types_for_ecto_type(type)
+      {:ok, var} = Nif.conn_new_var(conn, oracle_type, native_type, 1, size)
+      :ok = Nif.var_set_num_elements(var, 1)
+      var
+    end)
+  end
+
+  # Bind input variables to statement positions
+  defp bind_input_variables(stmt, vars) do
+    Enum.reduce_while(vars, :ok, fn {pos, var}, :ok ->
+      case Nif.stmt_bind_by_pos(stmt, pos, var) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  # Bind output variables to RETURNING INTO positions
+  defp bind_output_variables(stmt, vars, start_pos) do
+    vars
+    |> Enum.with_index(start_pos)
+    |> Enum.reduce_while(:ok, fn {var, pos}, :ok ->
+      case Nif.stmt_bind_by_pos(stmt, pos, var) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  # Retrieve values from output variables
+  defp retrieve_returned_values(vars) do
+    Enum.flat_map(vars, fn var ->
+      case Nif.var_get_returned_data(var, 0) do
+        {:ok, values} -> values
+        {:error, _} -> []
+      end
+    end)
+  end
+
+  # Clean up variables
+  defp cleanup_variables(vars) do
+    Enum.each(vars, fn
+      {_pos, var} -> Nif.var_release(var)
+      var -> Nif.var_release(var)
+    end)
+  end
+
+  # Set value on a variable based on its type
+  defp set_variable_value(_var, nil), do: :ok
+
+  defp set_variable_value(var, value) when is_integer(value) do
+    Nif.var_set_from_int(var, 0, value)
+  end
+
+  defp set_variable_value(var, value) when is_float(value) do
+    Nif.var_set_from_double(var, 0, value)
+  end
+
+  defp set_variable_value(var, value) when is_binary(value) do
+    Nif.var_set_from_bytes(var, 0, value)
+  end
+
+  defp set_variable_value(var, true), do: Nif.var_set_from_int(var, 0, 1)
+  defp set_variable_value(var, false), do: Nif.var_set_from_int(var, 0, 0)
+
+  defp set_variable_value(var, %Decimal{} = d) do
+    Nif.var_set_from_bytes(var, 0, Decimal.to_string(d))
+  end
+
+  defp set_variable_value(var, %Date{} = d) do
+    Nif.var_set_from_bytes(var, 0, Date.to_iso8601(d))
+  end
+
+  defp set_variable_value(var, %NaiveDateTime{} = ndt) do
+    Nif.var_set_from_bytes(var, 0, NaiveDateTime.to_iso8601(ndt))
+  end
+
+  defp set_variable_value(var, value) do
+    Nif.var_set_from_bytes(var, 0, to_string(value))
+  end
+
+  # Map Elixir values to ODPI-C types: {oracle_type, native_type, buffer_size}
+  defp odpi_types_for_value(nil), do: {:number, :int64, 0}
+  defp odpi_types_for_value(v) when is_integer(v), do: {:number, :int64, 0}
+  defp odpi_types_for_value(v) when is_float(v), do: {:number, :double, 0}
+  defp odpi_types_for_value(true), do: {:number, :int64, 0}
+  defp odpi_types_for_value(false), do: {:number, :int64, 0}
+  defp odpi_types_for_value(v) when is_binary(v), do: {:varchar, :bytes, max(byte_size(v), 100)}
+  defp odpi_types_for_value(%Decimal{}), do: {:varchar, :bytes, 128}
+  defp odpi_types_for_value(%Date{}), do: {:varchar, :bytes, 32}
+  defp odpi_types_for_value(%NaiveDateTime{}), do: {:varchar, :bytes, 64}
+  defp odpi_types_for_value(_), do: {:varchar, :bytes, 256}
+
+  # Map Ecto types to ODPI-C types for RETURNING columns
+  defp odpi_types_for_ecto_type(:id), do: {:number, :int64, 0}
+  defp odpi_types_for_ecto_type(:integer), do: {:number, :int64, 0}
+  defp odpi_types_for_ecto_type(:bigint), do: {:number, :int64, 0}
+  defp odpi_types_for_ecto_type(:string), do: {:varchar, :bytes, 4000}
+  defp odpi_types_for_ecto_type(:binary_id), do: {:raw, :bytes, 16}
+  defp odpi_types_for_ecto_type(:uuid), do: {:raw, :bytes, 16}
+  defp odpi_types_for_ecto_type(_), do: {:varchar, :bytes, 4000}
 
   defp fetch_all_rows(stmt, num_columns, columns) do
     fetch_rows_loop(stmt, num_columns, columns, [])

@@ -5,13 +5,19 @@ defmodule Inexora.Query do
   This struct implements the `DBConnection.Query` protocol.
   """
 
-  defstruct [:statement, :sql, :num_columns, :columns]
+  defstruct [:statement, :sql, :num_columns, :columns, :returning]
+
+  @type returning_spec :: %{
+          columns: [atom()],
+          start_pos: pos_integer()
+        }
 
   @type t :: %__MODULE__{
           statement: reference() | nil,
           sql: String.t(),
           num_columns: non_neg_integer() | nil,
-          columns: [map()] | nil
+          columns: [map()] | nil,
+          returning: returning_spec() | nil
         }
 
   @doc """

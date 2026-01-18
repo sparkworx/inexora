@@ -157,6 +157,7 @@
 - [core] Cursor/streaming support for large result sets (`Inexora.Cursor`, DBConnection cursor callbacks)
 - [core] Cursor NIF functions (`stmt_fetch_rows`, `stmt_set_fetch_array_size`, `stmt_set_prefetch_rows`)
 - [core] Auto-incrementing ID columns (Oracle IDENTITY) for test tables
+- [ecto] RETURNING INTO support for Ecto autogenerate (single-row inserts)
 
 **In Progress**:
 - None
@@ -164,9 +165,8 @@
 **TODO/Upcoming**:
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
-- [ecto] RETURNING INTO support for Ecto autogenerate (requires output bind variable handling)
 - [ecto] Implement Ecto migrations (runtime testing)
-- [ecto] Batch insert_all with RETURNING (requires special adapter handling)
+- [ecto] Batch insert_all with RETURNING (requires special adapter handling - Oracle INSERT ALL has IDENTITY column limitations)
 
 ---
 

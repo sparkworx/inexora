@@ -21,8 +21,62 @@ defmodule Ecto.Adapters.Oracle.Connection do
 
   @impl true
   def prepare_execute(conn, _name, sql, params, opts) do
-    query = %Inexora.Query{sql: sql, statement: nil}
+    sql_binary = IO.iodata_to_binary(sql)
+    returning = parse_returning_into(sql_binary)
+    query = %Inexora.Query{sql: sql_binary, statement: nil, returning: returning}
     DBConnection.prepare_execute(conn, query, params, opts)
+  end
+
+  # Parse SQL to detect RETURNING INTO clause and extract column info
+  # Pattern: RETURNING col1, col2 INTO :N, :N+1
+  defp parse_returning_into(sql) do
+    # Case-insensitive match for RETURNING ... INTO :N pattern
+    case Regex.run(~r/RETURNING\s+(.+?)\s+INTO\s+(.+?)$/is, sql) do
+      [_, columns_str, placeholders_str] ->
+        # Parse column names (they may be quoted with ")
+        columns =
+          columns_str
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+          |> Enum.map(&parse_column_name/1)
+
+        # Parse bind positions to find the starting position
+        # Format: :1, :2 or just :1 for single column
+        positions =
+          Regex.scan(~r/:(\d+)/, placeholders_str)
+          |> Enum.map(fn [_, pos] -> String.to_integer(pos) end)
+
+        if columns != [] and positions != [] do
+          start_pos = Enum.min(positions)
+          # Build column specs with inferred types (default to :id for now)
+          column_specs = Enum.map(columns, fn col -> {col, :id} end)
+
+          %{
+            columns: column_specs,
+            start_pos: start_pos
+          }
+        else
+          nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  # Parse column name, handling quoted identifiers
+  defp parse_column_name(col) do
+    col = String.trim(col)
+
+    cond do
+      # Quoted identifier "COLUMN_NAME"
+      String.starts_with?(col, "\"") and String.ends_with?(col, "\"") ->
+        col |> String.slice(1..-2//1) |> String.downcase() |> String.to_atom()
+
+      # Unquoted - Oracle uppercases these, normalize to lowercase atom
+      true ->
+        col |> String.downcase() |> String.to_atom()
+    end
   end
 
   @impl true
@@ -32,7 +86,10 @@ defmodule Ecto.Adapters.Oracle.Connection do
 
   @impl true
   def query(conn, sql, params, opts) do
-    query = %Inexora.Query{sql: sql, statement: nil}
+    sql_binary = IO.iodata_to_binary(sql)
+    returning = parse_returning_into(sql_binary)
+    query = %Inexora.Query{sql: sql_binary, statement: nil, returning: returning}
+
     case DBConnection.prepare_execute(conn, query, params, opts) do
       {:ok, _query, result} -> {:ok, result}
       {:error, err} -> {:error, err}
