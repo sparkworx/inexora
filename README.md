@@ -192,16 +192,37 @@ mix test
 
 ### Running Integration Tests
 
-Start an Oracle database (e.g., using Docker):
+Start an Oracle database using Docker Compose:
 
 ```bash
+# Start Oracle database (first startup takes a few minutes)
 docker compose up -d
+
+# Watch logs until "DATABASE IS READY TO USE!" appears
+docker compose logs -f
 ```
+
+The included `docker-compose.yaml` uses the official Oracle Free image, which requires a one-time login:
+
+```bash
+docker login container-registry.oracle.com
+```
+
+If you prefer not to create an Oracle account, edit `docker-compose.yaml` to use the commented `gvenzl/oracle-free:23-slim` image instead (no login required, faster startup).
+
+The compose file automatically creates the test user and persists data in a Docker volume.
 
 Run tests with Oracle connection:
 
 ```bash
 ORACLE_DATABASE_AVAILABLE=1 mix test --include oracle_database
+```
+
+Stop the database:
+
+```bash
+docker compose down      # Keep data volume
+docker compose down -v   # Remove data volume
 ```
 
 ### Environment Variables
