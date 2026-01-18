@@ -13,7 +13,8 @@ An Oracle Database driver and Ecto adapter for Elixir, built on [ODPI-C](https:/
 - Transaction support (begin, commit, rollback)
 - Prepared statements with parameter binding
 - Cursor/streaming support for large result sets
-- Batch operations via Oracle's `INSERT ALL` syntax
+- Batch insert operations with proper IDENTITY column support
+- **RETURNING INTO** support for auto-generated primary keys (Ecto `autogenerate: true`)
 
 ### Supported Data Types
 
@@ -127,6 +128,8 @@ end
 defmodule MyApp.Employee do
   use Ecto.Schema
 
+  # Auto-generated IDs work with Oracle IDENTITY columns
+  @primary_key {:id, :id, autogenerate: true}
   schema "employees" do
     field :name, :string
     field :salary, :decimal
@@ -140,12 +143,28 @@ employees = MyApp.Repo.all(
   where: e.salary > 50000
 )
 
-# Insert
+# Insert - ID is auto-generated and returned via RETURNING INTO
 {:ok, employee} = MyApp.Repo.insert(%MyApp.Employee{
   name: "John Doe",
   salary: Decimal.new("75000.00"),
   hire_date: ~D[2024-01-15]
 })
+
+# employee.id is now populated with the auto-generated value
+IO.puts("Created employee with ID: #{employee.id}")
+```
+
+### Bulk Inserts
+
+```elixir
+# insert_all works with IDENTITY columns
+entries = [
+  %{name: "Alice", salary: Decimal.new("60000"), hire_date: ~D[2024-01-01]},
+  %{name: "Bob", salary: Decimal.new("65000"), hire_date: ~D[2024-02-01]},
+  %{name: "Charlie", salary: Decimal.new("70000"), hire_date: ~D[2024-03-01]}
+]
+
+{3, nil} = MyApp.Repo.insert_all(MyApp.Employee, entries)
 ```
 
 ### Streaming Large Result Sets
