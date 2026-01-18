@@ -179,7 +179,7 @@ defmodule Inexora.Connection do
     execute_with_returning(query, params, state)
   end
 
-  def handle_execute(%Query{statement: stmt} = query, params, _opts, state) when is_reference(stmt) do
+  def handle_execute(%Query{statement: stmt, sql: sql} = query, params, _opts, state) when is_reference(stmt) do
     with :ok <- bind_params(stmt, params),
          {:ok, num_columns} <- Nif.stmt_execute(stmt) do
       if num_columns > 0 do
@@ -187,7 +187,7 @@ defmodule Inexora.Connection do
         execute_select(query, num_columns, state)
       else
         # DML statement - get row count
-        execute_dml(stmt, state)
+        execute_dml(stmt, sql, state)
       end
     else
       {:error, reason} ->
@@ -356,7 +356,7 @@ defmodule Inexora.Connection do
     end)
   end
 
-  defp execute_select(%Query{statement: stmt}, num_columns, state) do
+  defp execute_select(%Query{statement: stmt, sql: sql}, num_columns, state) do
     # Get column metadata
     columns =
       for pos <- 1..num_columns do
@@ -375,14 +375,14 @@ defmodule Inexora.Connection do
     rows = fetch_all_rows(stmt, num_columns, columns)
 
     result = Result.new_select(column_names, rows)
-    {:ok, %Query{statement: stmt}, result, state}
+    {:ok, %Query{statement: stmt, sql: sql}, result, state}
   end
 
-  defp execute_dml(stmt, state) do
+  defp execute_dml(stmt, sql, state) do
     case Nif.stmt_get_row_count(stmt) do
       {:ok, count} ->
         result = Result.new_dml(count)
-        {:ok, %Query{statement: stmt}, result, state}
+        {:ok, %Query{statement: stmt, sql: sql}, result, state}
 
       {:error, reason} ->
         {:error, Error.from_odpi(reason), state}
