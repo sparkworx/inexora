@@ -11,32 +11,35 @@ UNAME_S := $(shell uname -s)
 
 # Compiler settings
 CC ?= cc
-CFLAGS = -O2 -Wall -Wextra -Wno-unused-parameter
+BASE_CFLAGS = -O2 -Wall -Wextra -Wno-unused-parameter
 
 # Include paths
-CFLAGS += -I$(ERTS_INCLUDE_DIR)
-CFLAGS += -Ic_src/odpi/include
-
-# Memory allocation shim - redirect malloc/free to enif_alloc/enif_free
-# This is included FIRST before all other headers via -include flag
-CFLAGS += -include c_src/inexora_mem.h
+BASE_CFLAGS += -I$(ERTS_INCLUDE_DIR)
+BASE_CFLAGS += -Ic_src/odpi/include
 
 # Platform-specific settings
 ifeq ($(UNAME_S),Darwin)
 	# macOS
-	LDFLAGS = -dynamiclib -undefined dynamic_lookup
-	LDFLAGS += -L/usr/local/lib -Wl,-rpath,/usr/local/lib
+	BASE_LDFLAGS = -dynamiclib -undefined dynamic_lookup
+	BASE_LDFLAGS += -L/usr/local/lib -Wl,-rpath,/usr/local/lib
 	NIF_EXT = .so
 else ifeq ($(UNAME_S),Linux)
 	# Linux
-	CFLAGS += -fPIC
-	LDFLAGS = -shared
+	BASE_CFLAGS += -fPIC
+	BASE_LDFLAGS = -shared
 	NIF_EXT = .so
 else
 	# Windows (MinGW)
-	LDFLAGS = -shared
+	BASE_LDFLAGS = -shared
 	NIF_EXT = .dll
 endif
+
+# Allow extending flags via environment or command line
+# Usage: make EXTRA_CFLAGS="-fsanitize=address -g" EXTRA_LDFLAGS="-fsanitize=address"
+EXTRA_CFLAGS ?=
+EXTRA_LDFLAGS ?=
+CFLAGS = $(BASE_CFLAGS) $(EXTRA_CFLAGS)
+LDFLAGS = $(BASE_LDFLAGS) $(EXTRA_LDFLAGS)
 
 # Source files
 NIF_SRC = c_src/inexora_nif.c

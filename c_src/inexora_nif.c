@@ -3,8 +3,15 @@
 
 #include <erl_nif.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include "dpi.h"
+
+// Global mutex to serialize ODPI-C context creation.
+// ODPI-C loads the Oracle client library on first dpiContext_createWithParams call.
+// If multiple threads call this simultaneously, a race condition in the library
+// loading can cause a segfault. This mutex ensures only one thread initializes
+// ODPI-C at a time.
+static ErlNifMutex *context_create_mutex = NULL;
 
 // Resource types
 static ErlNifResourceType *CONTEXT_RESOURCE_TYPE;
@@ -329,10 +336,14 @@ static ERL_NIF_TERM nif_context_create(ErlNifEnv *env, int argc, const ERL_NIF_T
     ctxParams.oracleClientConfigDir = opts.oracle_client_config_dir;
 
     // Create context using ODPI-C
+    // Use mutex to serialize context creation - ODPI-C loads the Oracle client
+    // library on first call, and concurrent calls can race during initialization.
     dpiErrorInfo errorInfo;
     dpiContext *context = NULL;
+    enif_mutex_lock(context_create_mutex);
     int result = dpiContext_createWithParams(DPI_MAJOR_VERSION, DPI_MINOR_VERSION,
             &ctxParams, &context, &errorInfo);
+    enif_mutex_unlock(context_create_mutex);
 
     // Free options (no longer needed after context creation)
     context_options_free(&opts);
@@ -2537,6 +2548,21 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     (void)priv_data;
     (void)load_info;
 
+    // WORKAROUND: Setting DPI_DEBUG_LEVEL prevents a crash during Oracle library
+    // loading on some macOS systems. The exact cause is unknown but appears related
+    // to pthread/mutex initialization order when ODPI-C loads the Oracle client.
+    // This must be set BEFORE any mutex creation or ODPI-C calls.
+    // Level 1 = minimal debug output (errors only).
+    if (getenv("DPI_DEBUG_LEVEL") == NULL) {
+        setenv("DPI_DEBUG_LEVEL", "1", 0);
+    }
+
+    // Create global mutex for context creation serialization
+    context_create_mutex = enif_mutex_create("inexora_context_create_mutex");
+    if (context_create_mutex == NULL) {
+        return -1;
+    }
+
     // Create atoms
     ATOM_OK = enif_make_atom(env, "ok");
     ATOM_ERROR = enif_make_atom(env, "error");
@@ -2601,6 +2627,25 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
 
     if (VARIABLE_RESOURCE_TYPE == NULL) {
         return -1;
+    }
+
+    // Warmup: Initialize ODPI-C and load Oracle client library during NIF load.
+    // This ensures the Oracle library is loaded in a single-threaded context
+    // before ExUnit runs tests in parallel.
+    {
+        dpiContext *warmup_ctx = NULL;
+        dpiErrorInfo errorInfo;
+        dpiContextCreateParams ctxParams;
+        memset(&ctxParams, 0, sizeof(ctxParams));
+        ctxParams.defaultDriverName = "Inexora";
+
+        int result = dpiContext_createWithParams(DPI_MAJOR_VERSION, DPI_MINOR_VERSION,
+                &ctxParams, &warmup_ctx, &errorInfo);
+
+        if (result == DPI_SUCCESS && warmup_ctx != NULL) {
+            dpiContext_destroy(warmup_ctx);
+        }
+        // Non-fatal if Oracle client is not installed
     }
 
     return 0;

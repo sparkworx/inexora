@@ -1,15 +1,14 @@
 # Load test support files
 Code.require_file("support/test_helpers.ex", __DIR__)
 
-# Configure ExUnit - exclude tests requiring Oracle by default
-ExUnit.start(exclude: [:oracle_client, :oracle_database])
+# Configure ExUnit exclusions based on environment
+# - oracle_client: tests that need Oracle client libraries installed
+# - oracle_database: tests that need a live Oracle database connection
+exclusions =
+  cond do
+    System.get_env("ORACLE_DATABASE_AVAILABLE") -> []
+    System.get_env("ORACLE_CLIENT_AVAILABLE") -> [:oracle_database]
+    true -> [:oracle_client, :oracle_database]
+  end
 
-# Include oracle_client tests if Oracle client libraries are available
-if System.get_env("ORACLE_CLIENT_AVAILABLE") do
-  ExUnit.configure(exclude: [:oracle_database])
-end
-
-# Include oracle_database tests if a live database is available
-if System.get_env("ORACLE_DATABASE_AVAILABLE") do
-  ExUnit.configure(exclude: [])
-end
+ExUnit.start(exclude: exclusions)
