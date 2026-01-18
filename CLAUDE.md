@@ -166,7 +166,8 @@
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
 - [ecto] Implement Ecto migrations (runtime testing)
-- [ecto] Batch insert_all with RETURNING (requires special adapter handling - Oracle INSERT ALL has IDENTITY column limitations)
+- [ecto] Batch insert_all with RETURNING (requires special adapter handling)
+- [ecto] insert_all with nil values (Oracle UNION ALL requires type consistency)
 
 ---
 

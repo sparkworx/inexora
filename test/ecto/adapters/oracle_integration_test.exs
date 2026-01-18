@@ -362,20 +362,11 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
   end
 
   describe "Repo.insert_all/3" do
-    # NOTE: Oracle's INSERT ALL with IDENTITY columns has a known limitation where
-    # all rows in the batch may receive the same auto-generated ID, causing unique
-    # constraint violations. This is an Oracle-specific behavior, not a driver bug.
-    # See: Oracle documentation on INSERT ALL with sequences/identity columns.
-    #
-    # Workaround: Use individual inserts for tables with IDENTITY columns,
-    # or provide explicit IDs when using insert_all.
-
-    @tag :skip
     test "inserts multiple records without returning" do
       import Ecto.Query
 
-      # Insert multiple records using insert_all (uses INSERT ALL syntax)
-      # Don't specify IDs - let Oracle auto-generate them
+      # Insert multiple records using insert_all (uses INSERT INTO SELECT UNION ALL)
+      # Don't specify IDs - let Oracle auto-generate them via IDENTITY
       entries = [
         %{name: "InsertAll1", email: "ia1@test.com", age: 21, active: true},
         %{name: "InsertAll2", email: "ia2@test.com", age: 22, active: false},
@@ -392,27 +383,26 @@ defmodule Ecto.Adapters.OracleIntegrationTest do
       assert Decimal.equal?(db_count, Decimal.new(3))
     end
 
-    @tag :skip
-    test "inserts multiple records with different field subsets" do
+    test "inserts multiple records with varied data" do
       import Ecto.Query
 
-      # Some records have all fields, some have fewer (no explicit IDs)
+      # NOTE: Oracle's UNION ALL requires type consistency across all rows.
+      # When using insert_all with nil values, Oracle cannot infer the NULL type.
+      # For rows with nil values, use individual Repo.insert calls instead.
       entries = [
         %{name: "Full", email: "full@test.com", age: 30, active: true},
-        %{name: "NoAge", email: "noage@test.com", age: nil, active: false},
-        %{name: "Minimal", email: nil, age: nil, active: nil}
+        %{name: "Young", email: "young@test.com", age: 18, active: false},
+        %{name: "Senior", email: "senior@test.com", age: 65, active: true}
       ]
 
       {count, nil} = TestRepo.insert_all(User, entries)
 
       assert count == 3
 
-      # Verify record with nil fields exists
-      users = TestRepo.all(from u in User, where: u.name == "Minimal")
-      assert length(users) == 1
-      user = hd(users)
-      assert user.name == "Minimal"
-      assert user.email == nil
+      # Verify all records exist with correct data
+      users = TestRepo.all(from u in User, order_by: [asc: u.age])
+      assert length(users) == 3
+      assert Enum.map(users, & &1.name) == ["Young", "Full", "Senior"]
     end
   end
 end

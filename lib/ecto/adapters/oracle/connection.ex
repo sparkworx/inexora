@@ -204,12 +204,17 @@ defmodule Ecto.Adapters.Oracle.Connection do
           returning(returning, counter)
         ]
 
-      # Multi-row without RETURNING - use INSERT ALL
+      # Multi-row without RETURNING - use INSERT INTO SELECT UNION ALL
+      # This works correctly with IDENTITY columns (unlike INSERT ALL which
+      # generates the same ID for all rows in the batch)
       returning == [] ->
         [
-          "INSERT ALL",
-          insert_all_into(table_name, header, rows, 1, placeholders),
-          " SELECT 1 FROM DUAL"
+          "INSERT INTO ",
+          table_name,
+          " (",
+          intersperse_map(header, ?,, &quote_name/1),
+          ")",
+          insert_union_all(rows, 1, placeholders)
         ]
 
       # Multi-row with RETURNING - generate single-row INSERT for batch execution
@@ -230,24 +235,19 @@ defmodule Ecto.Adapters.Oracle.Connection do
     end
   end
 
-  # Generate INSERT ALL INTO clauses for multi-row insert
-  defp insert_all_into(table_name, header, rows, counter, placeholders) do
-    {clauses, _final_counter} =
+  # Generate SELECT ... FROM DUAL UNION ALL SELECT ... for multi-row insert
+  # This syntax works correctly with IDENTITY columns
+  defp insert_union_all(rows, counter, placeholders) do
+    {selects, _final_counter} =
       Enum.reduce(rows, {[], counter}, fn row, {acc, counter} ->
         {values, new_counter} = insert_each(row, counter, placeholders)
-        clause = [
-          " INTO ",
-          table_name,
-          " (",
-          intersperse_map(header, ?,, &quote_name/1),
-          ") VALUES (",
-          values,
-          ")"
-        ]
-        {[clause | acc], new_counter}
+        select = [" SELECT ", values, " FROM DUAL"]
+        {[select | acc], new_counter}
       end)
 
-    Enum.reverse(clauses)
+    selects
+    |> Enum.reverse()
+    |> Enum.intersperse(" UNION ALL")
   end
 
   defp insert_each(values, counter, placeholders) do
