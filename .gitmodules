@@ -1,3 +1,4 @@
 [submodule "c_src/odpi"]
 	path = c_src/odpi
-	url = https://github.com/oracle/odpi.git
+	url = https://github.com/sparkworx/odpi.git
+	branch = fix-integer-overflow-207
