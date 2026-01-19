@@ -176,10 +176,11 @@
 ### Setup Instructions
 ```bash
 1. Clone the repo
-2. Install dependencies: `mix deps.get`
-3. Set up environment: `mix setup && mix deps.compile`
-4. For testing, spin up an Oracle database: `docker compose up`
-5. Run tests: `mix test`
+2. Initialize submodules: `git submodule update --init --recursive`
+3. Install dependencies: `mix deps.get`
+4. Set up environment: `mix setup && mix deps.compile`
+5. For testing, spin up an Oracle database: `docker compose up`
+6. Run tests: `mix test`
 ```
 
 ### Environment Variables

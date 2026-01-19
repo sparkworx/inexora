@@ -180,6 +180,23 @@ Cursor.stream(state.conn, "SELECT * FROM large_table", [], max_rows: 100)
 |> Stream.run()
 ```
 
+## Development Setup
+
+To contribute or build from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/inexora.git
+cd inexora
+
+# Initialize the ODPI-C submodule
+git submodule update --init --recursive
+
+# Install dependencies and compile
+mix deps.get
+mix compile
+```
+
 ## Testing
 
 The test suite includes both unit tests and integration tests against a live Oracle database.
