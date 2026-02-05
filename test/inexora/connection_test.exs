@@ -22,15 +22,28 @@ defmodule Inexora.ConnectionTest do
       end
     end
 
-    test "returns error with missing username" do
-      assert_raise KeyError, ~r/username/, fn ->
-        Connection.connect(password: "pass", database: "db")
+    test "allows missing username for wallet authentication" do
+      # Should not raise - username defaults to empty string
+      # Will fail at ODPI-C level if no wallet is configured, but that's expected
+      case Connection.connect(password: "pass", database: "db") do
+        {:ok, state} -> Connection.disconnect(nil, state)
+        {:error, %Error{}} -> :ok
       end
     end
 
-    test "returns error with missing password" do
-      assert_raise KeyError, ~r/password/, fn ->
-        Connection.connect(username: "user", database: "db")
+    test "allows missing password for wallet authentication" do
+      # Should not raise - password defaults to empty string
+      case Connection.connect(username: "user", database: "db") do
+        {:ok, state} -> Connection.disconnect(nil, state)
+        {:error, %Error{}} -> :ok
+      end
+    end
+
+    test "allows missing username and password for wallet authentication" do
+      # Oracle Wallet authentication uses empty credentials
+      case Connection.connect(database: "db") do
+        {:ok, state} -> Connection.disconnect(nil, state)
+        {:error, %Error{}} -> :ok
       end
     end
 

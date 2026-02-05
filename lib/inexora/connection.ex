@@ -9,8 +9,8 @@ defmodule Inexora.Connection do
 
   Connection options:
 
-    * `:username` - Database username (required)
-    * `:password` - Database password (required)
+    * `:username` - Database username (optional, omit for Oracle Wallet authentication)
+    * `:password` - Database password (optional, omit for Oracle Wallet authentication)
     * `:database` - Oracle connection string (required), e.g., "localhost:1521/ORCLPDB1"
     * `:hostname` - Database hostname (alternative to connection string)
     * `:port` - Database port (default: 1521)
@@ -51,8 +51,8 @@ defmodule Inexora.Connection do
 
   @impl DBConnection
   def connect(opts) do
-    username = opts |> Keyword.fetch!(:username) |> to_string()
-    password = opts |> Keyword.fetch!(:password) |> to_string()
+    username = opts |> Keyword.get(:username, "") |> to_string()
+    password = opts |> Keyword.get(:password, "") |> to_string()
     database = build_connect_string(opts)
 
     with {:ok, context} <- Nif.context_create(),
