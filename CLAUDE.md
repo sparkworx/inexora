@@ -128,7 +128,7 @@
 **Completed**:
 - [core] NIF infrastructure with ODPI-C integration
 - [core] Context creation/destruction and client version retrieval
-- [core] Database connections (create, close, ping, health check)
+- [core] Database connections (create, close, ping, health check) with Oracle Wallet support (optional username/password)
 - [core] Transaction support (begin, commit, rollback)
 - [core] SQL statement preparation and execution
 - [core] Result set fetching with column metadata
