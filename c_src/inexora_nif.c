@@ -21,7 +21,14 @@ static ErlNifResourceType *VARIABLE_RESOURCE_TYPE;
 
 // Connection resource struct - holds both context and connection
 typedef struct {
-    dpiContext *context;
+    // Pinned reference to the context RESOURCE (kept via enif_keep_resource in
+    // nif_conn_create, released in connection_destructor). Without this pin the
+    // BEAM GC could run context_destructor (dpiContext_destroy) before this
+    // connection's destructor on abnormal teardown, freeing the ODPI-C env out
+    // from under dpiConn_release -> use-after-free. Completes the
+    // statement/variable -> connection -> context pin chain.
+    dpiContext **context_resource;
+    dpiContext *context;  // Cached raw handle (== *context_resource) for error retrieval
     dpiConn *conn;
     volatile int closed;  // Flag to indicate connection has been closed (for thread safety)
     ErlNifMutex *mutex;   // Mutex to protect connection close operations
@@ -60,6 +67,16 @@ static ERL_NIF_TERM ATOM_DRIVER_NAME;
 static ERL_NIF_TERM ATOM_ORACLE_CLIENT_LIB_DIR;
 static ERL_NIF_TERM ATOM_ORACLE_CLIENT_CONFIG_DIR;
 
+// Error map key atoms (widened ODPI-C error contract -> Inexora.Error)
+static ERL_NIF_TERM ATOM_ERR_CODE;
+static ERL_NIF_TERM ATOM_ERR_FN_NAME;
+static ERL_NIF_TERM ATOM_ERR_MESSAGE;
+static ERL_NIF_TERM ATOM_ERR_ACTION;
+static ERL_NIF_TERM ATOM_ERR_SQL_STATE;
+static ERL_NIF_TERM ATOM_ERR_OFFSET;
+static ERL_NIF_TERM ATOM_ERR_RECOVERABLE;
+static ERL_NIF_TERM ATOM_ERR_WARNING;
+
 // Helper: make {:ok, value} tuple
 static ERL_NIF_TERM make_ok_tuple(ErlNifEnv *env, ERL_NIF_TERM value) {
     return enif_make_tuple2(env, ATOM_OK, value);
@@ -87,14 +104,38 @@ static ERL_NIF_TERM make_error_tuple(ErlNifEnv *env, const char *reason) {
     return enif_make_tuple2(env, ATOM_ERROR, make_binary_string(env, reason));
 }
 
-// Helper: make {:error, dpiErrorInfo} tuple with details
+// Helper: make a binary from a NUL-terminated C string, or the nil atom if NULL/empty
+static ERL_NIF_TERM make_binary_or_nil(ErlNifEnv *env, const char *str) {
+    if (str == NULL || str[0] == '\0') {
+        return ATOM_NIL;
+    }
+    return make_binary_string(env, str);
+}
+
+// Helper: make {:error, error_map} carrying the full dpiErrorInfo detail.
+// This is the widened error contract; Inexora.Error.from_odpi/1 maps it to a struct.
+// dpiErrorInfo has 11 fields - we forward the 8 that are meaningful to Elixir callers
+// (the legacy contract forwarded only code/fnName/message, dropping action, sqlState,
+// offset and the recoverable/warning flags).
+// NOTE: errorInfo->isRecoverable is only meaningful when BOTH client and server are
+// Oracle 12.1+; it is reported false otherwise. Callers must not treat `false` alone
+// as "the connection is dead".
 static ERL_NIF_TERM make_dpi_error(ErlNifEnv *env, dpiErrorInfo *errorInfo) {
-    return enif_make_tuple2(env, ATOM_ERROR,
-        enif_make_tuple3(env,
-            enif_make_int(env, errorInfo->code),
-            make_binary_string(env, errorInfo->fnName ? errorInfo->fnName : "unknown"),
-            make_binary_string_len(env, errorInfo->message, errorInfo->messageLength)
-        ));
+    ERL_NIF_TERM map = enif_make_new_map(env);
+    ERL_NIF_TERM message = errorInfo->message
+        ? make_binary_string_len(env, errorInfo->message, errorInfo->messageLength)
+        : ATOM_NIL;
+
+    enif_make_map_put(env, map, ATOM_ERR_CODE,        enif_make_int(env, errorInfo->code), &map);
+    enif_make_map_put(env, map, ATOM_ERR_FN_NAME,     make_binary_or_nil(env, errorInfo->fnName), &map);
+    enif_make_map_put(env, map, ATOM_ERR_MESSAGE,     message, &map);
+    enif_make_map_put(env, map, ATOM_ERR_ACTION,      make_binary_or_nil(env, errorInfo->action), &map);
+    enif_make_map_put(env, map, ATOM_ERR_SQL_STATE,   make_binary_or_nil(env, errorInfo->sqlState), &map);
+    enif_make_map_put(env, map, ATOM_ERR_OFFSET,      enif_make_uint(env, errorInfo->offset), &map);
+    enif_make_map_put(env, map, ATOM_ERR_RECOVERABLE, errorInfo->isRecoverable ? ATOM_TRUE : ATOM_FALSE, &map);
+    enif_make_map_put(env, map, ATOM_ERR_WARNING,     errorInfo->isWarning ? ATOM_TRUE : ATOM_FALSE, &map);
+
+    return enif_make_tuple2(env, ATOM_ERROR, map);
 }
 
 // ============================================================
@@ -229,7 +270,15 @@ static void connection_destructor(ErlNifEnv *env, void *obj) {
         enif_mutex_destroy(conn_res->mutex);
         conn_res->mutex = NULL;
     }
-    // Note: We don't destroy the context here as it's managed separately
+
+    // Release our pin on the context resource, AFTER dpiConn_release above. The
+    // context itself is not destroyed here - that happens in context_destructor
+    // (or the explicit Nif.context_destroy in Inexora.Connection.disconnect/2),
+    // which can only run once no connection still references it.
+    if (conn_res->context_resource != NULL) {
+        enif_release_resource(conn_res->context_resource);
+        conn_res->context_resource = NULL;
+    }
 }
 
 // Statement destructor (called when Erlang garbage collects the resource)
@@ -477,6 +526,13 @@ static ERL_NIF_TERM nif_conn_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM
 
     // Wrap connection in Erlang resource (includes context reference for error retrieval)
     InexoraConnection *conn_res = enif_alloc_resource(CONNECTION_RESOURCE_TYPE, sizeof(InexoraConnection));
+    // Pin the context RESOURCE so it cannot be garbage-collected (and
+    // dpiContext_destroy'd) while this connection is alive. This mirrors how
+    // statements/variables pin their parent connection and guarantees the
+    // ODPI-C teardown order (dpiConn_release before dpiContext_destroy) even
+    // when the BEAM GC reclaims both resources on abnormal process exit.
+    enif_keep_resource(ctx_res);
+    conn_res->context_resource = ctx_res;
     conn_res->context = *ctx_res;
     conn_res->conn = conn;
     conn_res->closed = 0;  // Initialize closed flag
@@ -2575,6 +2631,16 @@ static int on_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
     ATOM_DRIVER_NAME = enif_make_atom(env, "driver_name");
     ATOM_ORACLE_CLIENT_LIB_DIR = enif_make_atom(env, "oracle_client_lib_dir");
     ATOM_ORACLE_CLIENT_CONFIG_DIR = enif_make_atom(env, "oracle_client_config_dir");
+
+    // Error map key atoms (widened ODPI-C error contract)
+    ATOM_ERR_CODE = enif_make_atom(env, "code");
+    ATOM_ERR_FN_NAME = enif_make_atom(env, "fn_name");
+    ATOM_ERR_MESSAGE = enif_make_atom(env, "message");
+    ATOM_ERR_ACTION = enif_make_atom(env, "action");
+    ATOM_ERR_SQL_STATE = enif_make_atom(env, "sql_state");
+    ATOM_ERR_OFFSET = enif_make_atom(env, "offset");
+    ATOM_ERR_RECOVERABLE = enif_make_atom(env, "recoverable");
+    ATOM_ERR_WARNING = enif_make_atom(env, "warning");
 
     // Register resource types
     CONTEXT_RESOURCE_TYPE = enif_open_resource_type(

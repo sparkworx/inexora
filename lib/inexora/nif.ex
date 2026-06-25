@@ -17,7 +17,25 @@ defmodule Inexora.Nif do
   @type context :: reference()
   @type conn :: reference()
   @type stmt :: reference()
-  @type reason :: atom() | String.t() | {integer(), String.t(), String.t()}
+
+  @typedoc """
+  Structured ODPI-C error payload returned by NIF functions on database failure.
+
+  Carries the full `dpiErrorInfo` detail. `:recoverable` is only meaningful on
+  Oracle 12.1+ (client and server); it is `false` otherwise.
+  """
+  @type odpi_error :: %{
+          code: integer(),
+          fn_name: String.t() | nil,
+          message: String.t() | nil,
+          action: String.t() | nil,
+          sql_state: String.t() | nil,
+          offset: non_neg_integer(),
+          recoverable: boolean(),
+          warning: boolean()
+        }
+
+  @type reason :: atom() | String.t() | odpi_error() | {integer(), String.t(), String.t()}
   @type column_info :: %{
           name: String.t(),
           oracle_type: non_neg_integer(),
@@ -354,7 +372,16 @@ defmodule Inexora.Nif do
           | :interval_ds
           | :interval_ym
   @type native_type ::
-          :bytes | :int64 | :uint64 | :float | :double | :timestamp | :interval_ds | :interval_ym | :lob | :rowid
+          :bytes
+          | :int64
+          | :uint64
+          | :float
+          | :double
+          | :timestamp
+          | :interval_ds
+          | :interval_ym
+          | :lob
+          | :rowid
 
   @doc """
   Creates a new variable for array/batch operations.
@@ -611,5 +638,4 @@ defmodule Inexora.Nif do
   """
   @spec stmt_get_prefetch_rows(stmt()) :: {:ok, non_neg_integer()} | {:error, reason()}
   def stmt_get_prefetch_rows(_stmt), do: :erlang.nif_error(:not_loaded)
-
 end

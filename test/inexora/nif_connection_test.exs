@@ -21,7 +21,7 @@ defmodule Inexora.NifConnectionTest do
           assert is_reference(conn)
           Nif.conn_close(conn)
 
-        {:error, {code, fn_name, message}} ->
+        {:error, %{code: code, fn_name: fn_name, message: message}} ->
           assert is_integer(code)
           assert is_binary(fn_name) or is_list(fn_name)
           assert is_binary(message) or is_list(message)

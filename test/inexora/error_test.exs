@@ -119,17 +119,18 @@ defmodule Inexora.ErrorTest do
     test "returns error for primary key violation" do
       with {:ok, state} <- connect_test_db() do
         # Create table with primary key
-        setup_query = Query.new("""
-        DECLARE
-          table_exists NUMBER;
-        BEGIN
-          SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_PK';
-          IF table_exists > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE error_test_pk';
-          END IF;
-          EXECUTE IMMEDIATE 'CREATE TABLE error_test_pk (id NUMBER PRIMARY KEY, name VARCHAR2(100))';
-        END;
-        """)
+        setup_query =
+          Query.new("""
+          DECLARE
+            table_exists NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_PK';
+            IF table_exists > 0 THEN
+              EXECUTE IMMEDIATE 'DROP TABLE error_test_pk';
+            END IF;
+            EXECUTE IMMEDIATE 'CREATE TABLE error_test_pk (id NUMBER PRIMARY KEY, name VARCHAR2(100))';
+          END;
+          """)
 
         case Connection.handle_execute(setup_query, [], [], state) do
           {:ok, _, _, state} ->
@@ -138,7 +139,8 @@ defmodule Inexora.ErrorTest do
             {:ok, _, _, state} = Connection.handle_execute(insert_query, [1, "first"], [], state)
 
             # Try to insert duplicate primary key
-            {:error, error, state} = Connection.handle_execute(insert_query, [1, "duplicate"], [], state)
+            {:error, error, state} =
+              Connection.handle_execute(insert_query, [1, "duplicate"], [], state)
 
             assert %Error{} = error
             assert error.message =~ "ORA-"
@@ -160,23 +162,26 @@ defmodule Inexora.ErrorTest do
     @tag :oracle_database
     test "returns error for NOT NULL constraint violation" do
       with {:ok, state} <- connect_test_db() do
-        setup_query = Query.new("""
-        DECLARE
-          table_exists NUMBER;
-        BEGIN
-          SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_NOTNULL';
-          IF table_exists > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE error_test_notnull';
-          END IF;
-          EXECUTE IMMEDIATE 'CREATE TABLE error_test_notnull (id NUMBER NOT NULL, name VARCHAR2(100))';
-        END;
-        """)
+        setup_query =
+          Query.new("""
+          DECLARE
+            table_exists NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_NOTNULL';
+            IF table_exists > 0 THEN
+              EXECUTE IMMEDIATE 'DROP TABLE error_test_notnull';
+            END IF;
+            EXECUTE IMMEDIATE 'CREATE TABLE error_test_notnull (id NUMBER NOT NULL, name VARCHAR2(100))';
+          END;
+          """)
 
         case Connection.handle_execute(setup_query, [], [], state) do
           {:ok, _, _, state} ->
             # Try to insert NULL into NOT NULL column
             insert_query = Query.new("INSERT INTO error_test_notnull (id, name) VALUES (:1, :2)")
-            {:error, error, state} = Connection.handle_execute(insert_query, [nil, "test"], [], state)
+
+            {:error, error, state} =
+              Connection.handle_execute(insert_query, [nil, "test"], [], state)
 
             assert %Error{} = error
             assert error.message =~ "ORA-"
@@ -197,17 +202,18 @@ defmodule Inexora.ErrorTest do
     @tag :oracle_database
     test "returns error for check constraint violation" do
       with {:ok, state} <- connect_test_db() do
-        setup_query = Query.new("""
-        DECLARE
-          table_exists NUMBER;
-        BEGIN
-          SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_CHECK';
-          IF table_exists > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE error_test_check';
-          END IF;
-          EXECUTE IMMEDIATE 'CREATE TABLE error_test_check (id NUMBER, age NUMBER CHECK (age >= 0))';
-        END;
-        """)
+        setup_query =
+          Query.new("""
+          DECLARE
+            table_exists NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_CHECK';
+            IF table_exists > 0 THEN
+              EXECUTE IMMEDIATE 'DROP TABLE error_test_check';
+            END IF;
+            EXECUTE IMMEDIATE 'CREATE TABLE error_test_check (id NUMBER, age NUMBER CHECK (age >= 0))';
+          END;
+          """)
 
         case Connection.handle_execute(setup_query, [], [], state) do
           {:ok, _, _, state} ->
@@ -236,24 +242,29 @@ defmodule Inexora.ErrorTest do
     @tag :oracle_database
     test "returns error for VARCHAR2 data too large" do
       with {:ok, state} <- connect_test_db() do
-        setup_query = Query.new("""
-        DECLARE
-          table_exists NUMBER;
-        BEGIN
-          SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_SIZE';
-          IF table_exists > 0 THEN
-            EXECUTE IMMEDIATE 'DROP TABLE error_test_size';
-          END IF;
-          EXECUTE IMMEDIATE 'CREATE TABLE error_test_size (id NUMBER, tiny_text VARCHAR2(10))';
-        END;
-        """)
+        setup_query =
+          Query.new("""
+          DECLARE
+            table_exists NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO table_exists FROM user_tables WHERE table_name = 'ERROR_TEST_SIZE';
+            IF table_exists > 0 THEN
+              EXECUTE IMMEDIATE 'DROP TABLE error_test_size';
+            END IF;
+            EXECUTE IMMEDIATE 'CREATE TABLE error_test_size (id NUMBER, tiny_text VARCHAR2(10))';
+          END;
+          """)
 
         case Connection.handle_execute(setup_query, [], [], state) do
           {:ok, _, _, state} ->
             # Try to insert text larger than column allows
             large_text = String.duplicate("X", 100)
-            insert_query = Query.new("INSERT INTO error_test_size (id, tiny_text) VALUES (:1, :2)")
-            {:error, error, state} = Connection.handle_execute(insert_query, [1, large_text], [], state)
+
+            insert_query =
+              Query.new("INSERT INTO error_test_size (id, tiny_text) VALUES (:1, :2)")
+
+            {:error, error, state} =
+              Connection.handle_execute(insert_query, [1, large_text], [], state)
 
             assert %Error{} = error
             assert error.message =~ "ORA-"
@@ -406,6 +417,71 @@ defmodule Inexora.ErrorTest do
       assert error.message == "connection failed"
       assert error.oracle_code == nil
     end
-  end
 
+    test "from_odpi/1 maps the full ODPI-C error payload (map shape)" do
+      error =
+        Error.from_odpi(%{
+          code: 1017,
+          fn_name: "dpiConn_create",
+          message: "ORA-01017: invalid username/password",
+          action: "OCISessionBegin",
+          sql_state: "72000",
+          offset: 0,
+          recoverable: false,
+          warning: false
+        })
+
+      assert error.message == "ORA-01017: invalid username/password"
+      assert error.oracle_code == 1017
+      assert error.function == "dpiConn_create"
+      assert error.action == "OCISessionBegin"
+      assert error.sql_state == "72000"
+      assert error.offset == 0
+      assert error.recoverable == false
+      assert error.warning == false
+    end
+
+    test "from_odpi/1 keeps nil ODPI-C fields nil and carries recoverable: true" do
+      error =
+        Error.from_odpi(%{
+          code: 1,
+          fn_name: "dpiStmt_execute",
+          message: "ORA-00001: unique constraint violated",
+          action: nil,
+          sql_state: nil,
+          offset: 0,
+          recoverable: true,
+          warning: false
+        })
+
+      assert error.action == nil
+      assert error.sql_state == nil
+      assert error.recoverable == true
+    end
+
+    test "from_odpi/1 still accepts the legacy 3-tuple (back-compat)" do
+      error = Error.from_odpi({1017, "dpiConn_create", "ORA-01017"})
+
+      assert error.oracle_code == 1017
+      assert error.function == "dpiConn_create"
+      assert error.action == nil
+      assert error.recoverable == nil
+    end
+
+    test "Inexora.Error is a raisable exception with the ODPI-C message" do
+      error =
+        Error.from_odpi(%{
+          code: 942,
+          fn_name: "dpiStmt_execute",
+          message: "ORA-00942: table or view does not exist",
+          action: nil,
+          sql_state: nil,
+          offset: 0,
+          recoverable: false,
+          warning: false
+        })
+
+      assert Exception.message(error) == "ORA-00942: table or view does not exist"
+    end
+  end
 end
