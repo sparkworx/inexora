@@ -1,0 +1,1517 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1771106337.7441833,
+    "ast_hash": "e90ada6f43b10cdc1fb5eb46d397df7b",
+    "semantic_hash": "e90ada6f43b10cdc1fb5eb46d397df7b"
+  },
+  ".formatter.exs": {
+    "mtime": 1768615997.9412038,
+    "ast_hash": "5929c731d5bca5967e0fb415b7fa9a01",
+    "semantic_hash": "5929c731d5bca5967e0fb415b7fa9a01"
+  },
+  "c_src/inexora_nif.c": {
+    "mtime": 1771108147.008666,
+    "ast_hash": "9734ab607791032644f87788a0497f94",
+    "semantic_hash": "9734ab607791032644f87788a0497f94"
+  },
+  "c_src/odpi/doc/src/_ext/parameters_table.py": {
+    "mtime": 1768887815.312773,
+    "ast_hash": "ac642572f863f88f9baa36e2efdaac75",
+    "semantic_hash": "ac642572f863f88f9baa36e2efdaac75"
+  },
+  "c_src/odpi/doc/src/_ext/table_with_summary.py": {
+    "mtime": 1768887815.3128467,
+    "ast_hash": "fe1766bae65e82557282a4cdc120fa46",
+    "semantic_hash": "fe1766bae65e82557282a4cdc120fa46"
+  },
+  "c_src/odpi/doc/src/conf.py": {
+    "mtime": 1768887815.3129327,
+    "ast_hash": "accf8eedf379d5796048d8c49b8270da",
+    "semantic_hash": "accf8eedf379d5796048d8c49b8270da"
+  },
+  "c_src/odpi/embed/dpi.c": {
+    "mtime": 1768887815.3240757,
+    "ast_hash": "7f898b887d358bb244ea368614f2223e",
+    "semantic_hash": "7f898b887d358bb244ea368614f2223e"
+  },
+  "c_src/odpi/include/dpi.h": {
+    "mtime": 1768887815.3246782,
+    "ast_hash": "ad74e1a109dd19b25e835e1b03c04872",
+    "semantic_hash": "ad74e1a109dd19b25e835e1b03c04872"
+  },
+  "c_src/odpi/samples/DemoAppContext.c": {
+    "mtime": 1768887815.3249917,
+    "ast_hash": "9cb1265f2e372f27c7915e61fdd41234",
+    "semantic_hash": "9cb1265f2e372f27c7915e61fdd41234"
+  },
+  "c_src/odpi/samples/DemoBFILE.c": {
+    "mtime": 1768887815.3251517,
+    "ast_hash": "eefeff50124a0e27fd614d0c2fdadf1d",
+    "semantic_hash": "eefeff50124a0e27fd614d0c2fdadf1d"
+  },
+  "c_src/odpi/samples/DemoBLOB.c": {
+    "mtime": 1768887815.325278,
+    "ast_hash": "aec9cf688c5134ed5db2e5a69d7a311b",
+    "semantic_hash": "aec9cf688c5134ed5db2e5a69d7a311b"
+  },
+  "c_src/odpi/samples/DemoBLOBsAsBytes.c": {
+    "mtime": 1768887815.3253732,
+    "ast_hash": "9db72166ce88008119387680c5cb0c7e",
+    "semantic_hash": "9db72166ce88008119387680c5cb0c7e"
+  },
+  "c_src/odpi/samples/DemoBindArrays.c": {
+    "mtime": 1768887815.3254743,
+    "ast_hash": "eca69426be327f76d7f306363812bb62",
+    "semantic_hash": "eca69426be327f76d7f306363812bb62"
+  },
+  "c_src/odpi/samples/DemoBindJSON.c": {
+    "mtime": 1768887815.3256857,
+    "ast_hash": "c6732979b1e396900452e35ba3139b18",
+    "semantic_hash": "c6732979b1e396900452e35ba3139b18"
+  },
+  "c_src/odpi/samples/DemoBindObjects.c": {
+    "mtime": 1768887815.3258002,
+    "ast_hash": "44f0d947ac1d6f436d4ba8920a7c617d",
+    "semantic_hash": "44f0d947ac1d6f436d4ba8920a7c617d"
+  },
+  "c_src/odpi/samples/DemoBulkAQ.c": {
+    "mtime": 1768887815.3259187,
+    "ast_hash": "e9eca71a5491f07275a5668c54617838",
+    "semantic_hash": "e9eca71a5491f07275a5668c54617838"
+  },
+  "c_src/odpi/samples/DemoCLOB.c": {
+    "mtime": 1768887815.326019,
+    "ast_hash": "384d9532df15e45cf1e7922599183282",
+    "semantic_hash": "384d9532df15e45cf1e7922599183282"
+  },
+  "c_src/odpi/samples/DemoCLOBsAsStrings.c": {
+    "mtime": 1768887815.3261132,
+    "ast_hash": "8a47e6cb555a625ea6c6b377b7e03c08",
+    "semantic_hash": "8a47e6cb555a625ea6c6b377b7e03c08"
+  },
+  "c_src/odpi/samples/DemoCQN.c": {
+    "mtime": 1768887815.3262243,
+    "ast_hash": "591091ba3593b74eb46e3d0f32d7bd40",
+    "semantic_hash": "591091ba3593b74eb46e3d0f32d7bd40"
+  },
+  "c_src/odpi/samples/DemoCallProc.c": {
+    "mtime": 1768887815.326296,
+    "ast_hash": "8c84debfe5e74737a0889cd048203963",
+    "semantic_hash": "8c84debfe5e74737a0889cd048203963"
+  },
+  "c_src/odpi/samples/DemoConvertNumbers.c": {
+    "mtime": 1768887815.3264332,
+    "ast_hash": "27242282accee279f2cb6c7027c092f3",
+    "semantic_hash": "27242282accee279f2cb6c7027c092f3"
+  },
+  "c_src/odpi/samples/DemoCreateSodaColl.c": {
+    "mtime": 1768887815.326532,
+    "ast_hash": "c7326b7cfaa529622229eed585c7561a",
+    "semantic_hash": "c7326b7cfaa529622229eed585c7561a"
+  },
+  "c_src/odpi/samples/DemoDMLReturning.c": {
+    "mtime": 1768887815.326652,
+    "ast_hash": "de8370ff18e8039e84269b09d3295a3d",
+    "semantic_hash": "de8370ff18e8039e84269b09d3295a3d"
+  },
+  "c_src/odpi/samples/DemoDistribTrans.c": {
+    "mtime": 1768887815.326756,
+    "ast_hash": "7114b23530f5c83a4390694940fbd8b8",
+    "semantic_hash": "7114b23530f5c83a4390694940fbd8b8"
+  },
+  "c_src/odpi/samples/DemoDropSodaColl.c": {
+    "mtime": 1768887815.326821,
+    "ast_hash": "d696ff3371fa3d5b114212eb7c4ea53c",
+    "semantic_hash": "d696ff3371fa3d5b114212eb7c4ea53c"
+  },
+  "c_src/odpi/samples/DemoFetch.c": {
+    "mtime": 1768887815.3269148,
+    "ast_hash": "91c44fad281cb51498c6082cdbbfb191",
+    "semantic_hash": "91c44fad281cb51498c6082cdbbfb191"
+  },
+  "c_src/odpi/samples/DemoFetchDates.c": {
+    "mtime": 1768887815.3270147,
+    "ast_hash": "0502de8989636c466b938ae03e8f0c85",
+    "semantic_hash": "0502de8989636c466b938ae03e8f0c85"
+  },
+  "c_src/odpi/samples/DemoFetchJSON.c": {
+    "mtime": 1768887815.327126,
+    "ast_hash": "00158bcd407a67348110f1c0f1223b24",
+    "semantic_hash": "00158bcd407a67348110f1c0f1223b24"
+  },
+  "c_src/odpi/samples/DemoFetchObjects.c": {
+    "mtime": 1768887815.3272297,
+    "ast_hash": "2cadb259237ab9bdddfba23430e421a8",
+    "semantic_hash": "2cadb259237ab9bdddfba23430e421a8"
+  },
+  "c_src/odpi/samples/DemoGetAllSodaDocs.c": {
+    "mtime": 1768887815.3273332,
+    "ast_hash": "429127406146b3aa17ade62e30c9258a",
+    "semantic_hash": "429127406146b3aa17ade62e30c9258a"
+  },
+  "c_src/odpi/samples/DemoGetSodaCollNames.c": {
+    "mtime": 1768887815.3273969,
+    "ast_hash": "13352ba3ea3b83cc93e95639a01c78e1",
+    "semantic_hash": "13352ba3ea3b83cc93e95639a01c78e1"
+  },
+  "c_src/odpi/samples/DemoGetSodaDoc.c": {
+    "mtime": 1768887815.327465,
+    "ast_hash": "61f94281978a653548eea5a92d4d0670",
+    "semantic_hash": "61f94281978a653548eea5a92d4d0670"
+  },
+  "c_src/odpi/samples/DemoImplicitResults.c": {
+    "mtime": 1768887815.32753,
+    "ast_hash": "87e10bfeee11ae6a28faf6d31a91cdf7",
+    "semantic_hash": "87e10bfeee11ae6a28faf6d31a91cdf7"
+  },
+  "c_src/odpi/samples/DemoInOutTempLobs.c": {
+    "mtime": 1768887815.3276327,
+    "ast_hash": "6152ce3bd71cf18c4094ec7eba44b0e6",
+    "semantic_hash": "6152ce3bd71cf18c4094ec7eba44b0e6"
+  },
+  "c_src/odpi/samples/DemoInsert.c": {
+    "mtime": 1768887815.3277287,
+    "ast_hash": "0b52ffeb3387e136489a74ca445e80f1",
+    "semantic_hash": "0b52ffeb3387e136489a74ca445e80f1"
+  },
+  "c_src/odpi/samples/DemoInsertAsArray.c": {
+    "mtime": 1768887815.3278282,
+    "ast_hash": "804a5157172b539223e2bf03a4029e1f",
+    "semantic_hash": "804a5157172b539223e2bf03a4029e1f"
+  },
+  "c_src/odpi/samples/DemoInsertManySodaColl.c": {
+    "mtime": 1768887815.3279233,
+    "ast_hash": "42c1184e2adfc8befab7407a532256f3",
+    "semantic_hash": "42c1184e2adfc8befab7407a532256f3"
+  },
+  "c_src/odpi/samples/DemoInsertSodaColl.c": {
+    "mtime": 1768887815.3281877,
+    "ast_hash": "17c50be6364a99f8b5e5cd3aa2879b74",
+    "semantic_hash": "17c50be6364a99f8b5e5cd3aa2879b74"
+  },
+  "c_src/odpi/samples/DemoIterSodaColls.c": {
+    "mtime": 1768887815.32828,
+    "ast_hash": "ab11c350c939dbfd80abed3051d53190",
+    "semantic_hash": "ab11c350c939dbfd80abed3051d53190"
+  },
+  "c_src/odpi/samples/DemoLongRaws.c": {
+    "mtime": 1768887815.3283906,
+    "ast_hash": "95107bd270eb77e18d70fec5c0c016ac",
+    "semantic_hash": "95107bd270eb77e18d70fec5c0c016ac"
+  },
+  "c_src/odpi/samples/DemoLongs.c": {
+    "mtime": 1768887815.328503,
+    "ast_hash": "01213601feee37d264bebea4da6e7ba4",
+    "semantic_hash": "01213601feee37d264bebea4da6e7ba4"
+  },
+  "c_src/odpi/samples/DemoObjectAQ.c": {
+    "mtime": 1768887815.3286142,
+    "ast_hash": "8640642f9825252f956d31384f6cf09f",
+    "semantic_hash": "8640642f9825252f956d31384f6cf09f"
+  },
+  "c_src/odpi/samples/DemoRawAQ.c": {
+    "mtime": 1768887815.3286915,
+    "ast_hash": "6fd1f18340fcbb998abe2dae0db49e26",
+    "semantic_hash": "6fd1f18340fcbb998abe2dae0db49e26"
+  },
+  "c_src/odpi/samples/DemoRefCursors.c": {
+    "mtime": 1768887815.3287578,
+    "ast_hash": "d4af0c8cadbdc7f7aa35d27ee32a072f",
+    "semantic_hash": "d4af0c8cadbdc7f7aa35d27ee32a072f"
+  },
+  "c_src/odpi/samples/DemoRemoveSodaDoc.c": {
+    "mtime": 1768887815.3288383,
+    "ast_hash": "487ea553264d3a370de748d87dc84999",
+    "semantic_hash": "487ea553264d3a370de748d87dc84999"
+  },
+  "c_src/odpi/samples/DemoReplaceSodaDoc.c": {
+    "mtime": 1768887815.3289487,
+    "ast_hash": "38cfbbb81f36e37fdc5dab4db1140dec",
+    "semantic_hash": "38cfbbb81f36e37fdc5dab4db1140dec"
+  },
+  "c_src/odpi/samples/DemoShardingNumberKey.c": {
+    "mtime": 1768887815.3290334,
+    "ast_hash": "eb8332a66d013a41367e62a21099e699",
+    "semantic_hash": "eb8332a66d013a41367e62a21099e699"
+  },
+  "c_src/odpi/samples/DemoTokenPoolWithCallback.c": {
+    "mtime": 1768887815.3291934,
+    "ast_hash": "28eef5a978192a931ddbc95d9f5eded7",
+    "semantic_hash": "28eef5a978192a931ddbc95d9f5eded7"
+  },
+  "c_src/odpi/samples/DemoTokenStandalone.c": {
+    "mtime": 1768887815.3292644,
+    "ast_hash": "f4fb4fa2a9b02776d551020949c99ebd",
+    "semantic_hash": "f4fb4fa2a9b02776d551020949c99ebd"
+  },
+  "c_src/odpi/samples/SampleLib.c": {
+    "mtime": 1768887815.3296971,
+    "ast_hash": "138e171a3ef386a4ababe93d1bcaca12",
+    "semantic_hash": "138e171a3ef386a4ababe93d1bcaca12"
+  },
+  "c_src/odpi/samples/SampleLib.h": {
+    "mtime": 1768887815.32979,
+    "ast_hash": "438c1f717e3223acb716d02ce6f8188c",
+    "semantic_hash": "438c1f717e3223acb716d02ce6f8188c"
+  },
+  "c_src/odpi/samples/sql/DropSamples.sql": {
+    "mtime": 1768887815.3299646,
+    "ast_hash": "3bb7dd2a002665307ed3ebe3a8ebe4f2",
+    "semantic_hash": "3bb7dd2a002665307ed3ebe3a8ebe4f2"
+  },
+  "c_src/odpi/samples/sql/SampleEnv.sql": {
+    "mtime": 1768887815.3300412,
+    "ast_hash": "e6961452ea6ba16dbb388d2c37fab261",
+    "semantic_hash": "e6961452ea6ba16dbb388d2c37fab261"
+  },
+  "c_src/odpi/samples/sql/SetupSamples.sql": {
+    "mtime": 1768887815.3301346,
+    "ast_hash": "050f396d37917e69c5fde0f165bbb7e3",
+    "semantic_hash": "050f396d37917e69c5fde0f165bbb7e3"
+  },
+  "c_src/odpi/src/dpiConn.c": {
+    "mtime": 1768887815.330395,
+    "ast_hash": "5e3a272fa42ad3432ed5bcc36b74e4e8",
+    "semantic_hash": "5e3a272fa42ad3432ed5bcc36b74e4e8"
+  },
+  "c_src/odpi/src/dpiContext.c": {
+    "mtime": 1768887815.330522,
+    "ast_hash": "5eb4285e8a9191f620d05fc16b6d9162",
+    "semantic_hash": "5eb4285e8a9191f620d05fc16b6d9162"
+  },
+  "c_src/odpi/src/dpiData.c": {
+    "mtime": 1768887815.3306432,
+    "ast_hash": "2b6e05c7e625ffd9ce6eab9c6db18300",
+    "semantic_hash": "2b6e05c7e625ffd9ce6eab9c6db18300"
+  },
+  "c_src/odpi/src/dpiDebug.c": {
+    "mtime": 1768887815.330768,
+    "ast_hash": "d66fbedd0468720f7d43fa547343de47",
+    "semantic_hash": "d66fbedd0468720f7d43fa547343de47"
+  },
+  "c_src/odpi/src/dpiDeqOptions.c": {
+    "mtime": 1768887815.330971,
+    "ast_hash": "ed06ef72bc090749537239a69a1cc605",
+    "semantic_hash": "ed06ef72bc090749537239a69a1cc605"
+  },
+  "c_src/odpi/src/dpiEnqOptions.c": {
+    "mtime": 1768887815.3310802,
+    "ast_hash": "a0d4639fca256f45e1d5a19f7ca2e130",
+    "semantic_hash": "a0d4639fca256f45e1d5a19f7ca2e130"
+  },
+  "c_src/odpi/src/dpiEnv.c": {
+    "mtime": 1768887815.3312018,
+    "ast_hash": "2c4209f9e737cec35248410b0ea722c9",
+    "semantic_hash": "2c4209f9e737cec35248410b0ea722c9"
+  },
+  "c_src/odpi/src/dpiError.c": {
+    "mtime": 1768887815.3312933,
+    "ast_hash": "f05219e22df241c132865ba7cdba974b",
+    "semantic_hash": "f05219e22df241c132865ba7cdba974b"
+  },
+  "c_src/odpi/src/dpiErrorMessages.h": {
+    "mtime": 1768887815.3314328,
+    "ast_hash": "a829ee1d5cece5ab037af4c503850e39",
+    "semantic_hash": "a829ee1d5cece5ab037af4c503850e39"
+  },
+  "c_src/odpi/src/dpiGen.c": {
+    "mtime": 1768887815.33153,
+    "ast_hash": "6282ae364e7fda335aaf60067ba77afc",
+    "semantic_hash": "6282ae364e7fda335aaf60067ba77afc"
+  },
+  "c_src/odpi/src/dpiGlobal.c": {
+    "mtime": 1768887815.3316321,
+    "ast_hash": "20a4b93eee05b9e3693f31f108008b12",
+    "semantic_hash": "20a4b93eee05b9e3693f31f108008b12"
+  },
+  "c_src/odpi/src/dpiHandleList.c": {
+    "mtime": 1768887815.3317432,
+    "ast_hash": "14b87895be3923056b40dc70b60de164",
+    "semantic_hash": "14b87895be3923056b40dc70b60de164"
+  },
+  "c_src/odpi/src/dpiHandlePool.c": {
+    "mtime": 1768887815.3318617,
+    "ast_hash": "2e919aae9f82429ac4f3c0ef9b1e80c7",
+    "semantic_hash": "2e919aae9f82429ac4f3c0ef9b1e80c7"
+  },
+  "c_src/odpi/src/dpiImpl.h": {
+    "mtime": 1768887815.3322403,
+    "ast_hash": "396215516910d75a838c07deb2bb0345",
+    "semantic_hash": "396215516910d75a838c07deb2bb0345"
+  },
+  "c_src/odpi/src/dpiJson.c": {
+    "mtime": 1768887815.332406,
+    "ast_hash": "8bce005341ddbc88efd95b47566fafde",
+    "semantic_hash": "8bce005341ddbc88efd95b47566fafde"
+  },
+  "c_src/odpi/src/dpiLob.c": {
+    "mtime": 1768887815.3326368,
+    "ast_hash": "7b753337a302454144999b78fb00dec8",
+    "semantic_hash": "7b753337a302454144999b78fb00dec8"
+  },
+  "c_src/odpi/src/dpiMsgProps.c": {
+    "mtime": 1768887815.3330207,
+    "ast_hash": "b4774face54775118653ff97504941e1",
+    "semantic_hash": "b4774face54775118653ff97504941e1"
+  },
+  "c_src/odpi/src/dpiObject.c": {
+    "mtime": 1768887815.333187,
+    "ast_hash": "667b6588e32521de4ea762334e99f1fc",
+    "semantic_hash": "667b6588e32521de4ea762334e99f1fc"
+  },
+  "c_src/odpi/src/dpiObjectAttr.c": {
+    "mtime": 1768887815.3333614,
+    "ast_hash": "533e738cbe4810e4d9c778fe077850df",
+    "semantic_hash": "533e738cbe4810e4d9c778fe077850df"
+  },
+  "c_src/odpi/src/dpiObjectType.c": {
+    "mtime": 1768887815.3334725,
+    "ast_hash": "45eba2b6b0aa3593a04740f8d2041418",
+    "semantic_hash": "45eba2b6b0aa3593a04740f8d2041418"
+  },
+  "c_src/odpi/src/dpiOci.c": {
+    "mtime": 1768973157.3043988,
+    "ast_hash": "e1cacc903f22ed6ff6b7b35b3a5dcbef",
+    "semantic_hash": "e1cacc903f22ed6ff6b7b35b3a5dcbef"
+  },
+  "c_src/odpi/src/dpiOracleType.c": {
+    "mtime": 1768887815.3338504,
+    "ast_hash": "6c4ef3957bcd15bff7eee65b2da93b5e",
+    "semantic_hash": "6c4ef3957bcd15bff7eee65b2da93b5e"
+  },
+  "c_src/odpi/src/dpiPool.c": {
+    "mtime": 1768887815.3339677,
+    "ast_hash": "222b18388d50cdd0a269ffba4572359f",
+    "semantic_hash": "222b18388d50cdd0a269ffba4572359f"
+  },
+  "c_src/odpi/src/dpiQueue.c": {
+    "mtime": 1768887815.3340878,
+    "ast_hash": "f96e577a214e78946c8e5c9e5f76fd71",
+    "semantic_hash": "f96e577a214e78946c8e5c9e5f76fd71"
+  },
+  "c_src/odpi/src/dpiRowid.c": {
+    "mtime": 1768887815.334247,
+    "ast_hash": "3ea10bebfb1785dc3daa40d2be2b6bbf",
+    "semantic_hash": "3ea10bebfb1785dc3daa40d2be2b6bbf"
+  },
+  "c_src/odpi/src/dpiSodaColl.c": {
+    "mtime": 1768887815.3343704,
+    "ast_hash": "cf2d7ddbf300bce5ca1247bdf8eede8c",
+    "semantic_hash": "cf2d7ddbf300bce5ca1247bdf8eede8c"
+  },
+  "c_src/odpi/src/dpiSodaCollCursor.c": {
+    "mtime": 1768887815.3345206,
+    "ast_hash": "2c01f8fd1d6d693f5840d1422bb02755",
+    "semantic_hash": "2c01f8fd1d6d693f5840d1422bb02755"
+  },
+  "c_src/odpi/src/dpiSodaDb.c": {
+    "mtime": 1768887815.334624,
+    "ast_hash": "88797e4ff393d0a27f83fb9c5dd95ff6",
+    "semantic_hash": "88797e4ff393d0a27f83fb9c5dd95ff6"
+  },
+  "c_src/odpi/src/dpiSodaDoc.c": {
+    "mtime": 1768887815.3347278,
+    "ast_hash": "13d7d35c832364b3cfe13d79259cc817",
+    "semantic_hash": "13d7d35c832364b3cfe13d79259cc817"
+  },
+  "c_src/odpi/src/dpiSodaDocCursor.c": {
+    "mtime": 1768887815.3349054,
+    "ast_hash": "8e72a7a2a0c11a4e5676f8a29704a459",
+    "semantic_hash": "8e72a7a2a0c11a4e5676f8a29704a459"
+  },
+  "c_src/odpi/src/dpiStmt.c": {
+    "mtime": 1768887815.3351123,
+    "ast_hash": "3d61a9af1f76b836d8f30098829923aa",
+    "semantic_hash": "3d61a9af1f76b836d8f30098829923aa"
+  },
+  "c_src/odpi/src/dpiStringList.c": {
+    "mtime": 1768887815.3352752,
+    "ast_hash": "888cf82dcf126ce8b820e71a14000259",
+    "semantic_hash": "888cf82dcf126ce8b820e71a14000259"
+  },
+  "c_src/odpi/src/dpiSubscr.c": {
+    "mtime": 1768887815.3353848,
+    "ast_hash": "2d833f7663cd333e2d4c9dd5612787e9",
+    "semantic_hash": "2d833f7663cd333e2d4c9dd5612787e9"
+  },
+  "c_src/odpi/src/dpiUtils.c": {
+    "mtime": 1768887815.3355076,
+    "ast_hash": "cf969553449ffa329a88573e8cc7f486",
+    "semantic_hash": "cf969553449ffa329a88573e8cc7f486"
+  },
+  "c_src/odpi/src/dpiVar.c": {
+    "mtime": 1768887815.3356953,
+    "ast_hash": "3305194d1a59194e389bb2d7eae36844",
+    "semantic_hash": "3305194d1a59194e389bb2d7eae36844"
+  },
+  "c_src/odpi/src/dpiVector.c": {
+    "mtime": 1768887815.3358219,
+    "ast_hash": "0374e98c74bd6430820726b18ec83052",
+    "semantic_hash": "0374e98c74bd6430820726b18ec83052"
+  },
+  "c_src/odpi/test/TestLib.c": {
+    "mtime": 1768887815.3363972,
+    "ast_hash": "a10d01a63a58eef66e676a89d6bcba56",
+    "semantic_hash": "a10d01a63a58eef66e676a89d6bcba56"
+  },
+  "c_src/odpi/test/TestLib.h": {
+    "mtime": 1768887815.3365247,
+    "ast_hash": "2a80bc7eb840edc286c51dd6cf677bbd",
+    "semantic_hash": "2a80bc7eb840edc286c51dd6cf677bbd"
+  },
+  "c_src/odpi/test/TestSuiteRunner.c": {
+    "mtime": 1768887815.336638,
+    "ast_hash": "57423b5e7119fd610cf2f25c5fa99c75",
+    "semantic_hash": "57423b5e7119fd610cf2f25c5fa99c75"
+  },
+  "c_src/odpi/test/sql/DropTest.sql": {
+    "mtime": 1768887815.336758,
+    "ast_hash": "8fbd8591115a2d01a5db72fc3b7c5e18",
+    "semantic_hash": "8fbd8591115a2d01a5db72fc3b7c5e18"
+  },
+  "c_src/odpi/test/sql/SetupTest.sql": {
+    "mtime": 1768887815.336892,
+    "ast_hash": "37ad93a2406c903a00276098c5e1fb0a",
+    "semantic_hash": "37ad93a2406c903a00276098c5e1fb0a"
+  },
+  "c_src/odpi/test/sql/TestEnv.sql": {
+    "mtime": 1768887815.336962,
+    "ast_hash": "c4faded8f3c5226ace6fa498372a0823",
+    "semantic_hash": "c4faded8f3c5226ace6fa498372a0823"
+  },
+  "c_src/odpi/test/test_1000_context.c": {
+    "mtime": 1768887815.337102,
+    "ast_hash": "bfaf2d3e70e185d65c600c9127be9704",
+    "semantic_hash": "bfaf2d3e70e185d65c600c9127be9704"
+  },
+  "c_src/odpi/test/test_1100_numbers.c": {
+    "mtime": 1768887815.3372355,
+    "ast_hash": "62006b90c3075ba87fd8a9bc23abe11f",
+    "semantic_hash": "62006b90c3075ba87fd8a9bc23abe11f"
+  },
+  "c_src/odpi/test/test_1200_conn.c": {
+    "mtime": 1768887815.3373396,
+    "ast_hash": "b2156b8112005f4609414fb5bdd70199",
+    "semantic_hash": "b2156b8112005f4609414fb5bdd70199"
+  },
+  "c_src/odpi/test/test_1300_conn_properties.c": {
+    "mtime": 1768887815.337617,
+    "ast_hash": "2ff41eca643412c1f0086de07fd4bed1",
+    "semantic_hash": "2ff41eca643412c1f0086de07fd4bed1"
+  },
+  "c_src/odpi/test/test_1400_pool.c": {
+    "mtime": 1768887815.3377256,
+    "ast_hash": "2dadd95368ebcfe8cbfb1f4064d8f691",
+    "semantic_hash": "2dadd95368ebcfe8cbfb1f4064d8f691"
+  },
+  "c_src/odpi/test/test_1500_pool_properties.c": {
+    "mtime": 1768887815.33783,
+    "ast_hash": "5e6d65254d360c9cfb97c739fd8bee35",
+    "semantic_hash": "5e6d65254d360c9cfb97c739fd8bee35"
+  },
+  "c_src/odpi/test/test_1600_queries.c": {
+    "mtime": 1768887815.3379931,
+    "ast_hash": "651883f7fc12ea97188d9b81a558a183",
+    "semantic_hash": "651883f7fc12ea97188d9b81a558a183"
+  },
+  "c_src/odpi/test/test_1700_transactions.c": {
+    "mtime": 1768887815.33812,
+    "ast_hash": "10e212e2a08c0903c7e9e4b9b96a4ce7",
+    "semantic_hash": "10e212e2a08c0903c7e9e4b9b96a4ce7"
+  },
+  "c_src/odpi/test/test_1800_misc.c": {
+    "mtime": 1768887815.3382215,
+    "ast_hash": "76f45315e644397cdf16e9972540e5b7",
+    "semantic_hash": "76f45315e644397cdf16e9972540e5b7"
+  },
+  "c_src/odpi/test/test_1900_variables.c": {
+    "mtime": 1768887815.3383276,
+    "ast_hash": "8c5ace5c6e4c7326b260d9a9920d27de",
+    "semantic_hash": "8c5ace5c6e4c7326b260d9a9920d27de"
+  },
+  "c_src/odpi/test/test_2000_statements.c": {
+    "mtime": 1768887815.338533,
+    "ast_hash": "71e30fa7a0e208ededd70362248141a5",
+    "semantic_hash": "71e30fa7a0e208ededd70362248141a5"
+  },
+  "c_src/odpi/test/test_2100_data_types.c": {
+    "mtime": 1768887815.3387234,
+    "ast_hash": "22faa57ebd148cc2bc75cae16f048de7",
+    "semantic_hash": "22faa57ebd148cc2bc75cae16f048de7"
+  },
+  "c_src/odpi/test/test_2200_object_types.c": {
+    "mtime": 1768887815.3389003,
+    "ast_hash": "07ad07d60587eed905adbd4f7c5d44d8",
+    "semantic_hash": "07ad07d60587eed905adbd4f7c5d44d8"
+  },
+  "c_src/odpi/test/test_2300_objects.c": {
+    "mtime": 1768887815.339086,
+    "ast_hash": "e0cec8ca558a051477c729a2a16545ff",
+    "semantic_hash": "e0cec8ca558a051477c729a2a16545ff"
+  },
+  "c_src/odpi/test/test_2400_enq_options.c": {
+    "mtime": 1768887815.3392613,
+    "ast_hash": "ee371975d2b6610310edc604f614931c",
+    "semantic_hash": "ee371975d2b6610310edc604f614931c"
+  },
+  "c_src/odpi/test/test_2500_deq_options.c": {
+    "mtime": 1768887815.3393419,
+    "ast_hash": "64491f0f3999cdfafdfda42f08d92ff1",
+    "semantic_hash": "64491f0f3999cdfafdfda42f08d92ff1"
+  },
+  "c_src/odpi/test/test_2600_msg_props.c": {
+    "mtime": 1768887815.3394375,
+    "ast_hash": "52eddb6152fb9dcf0827902290d6b734",
+    "semantic_hash": "52eddb6152fb9dcf0827902290d6b734"
+  },
+  "c_src/odpi/test/test_2700_aq.c": {
+    "mtime": 1768887815.3395252,
+    "ast_hash": "82bbe80322857d863185ef54cfcc8c38",
+    "semantic_hash": "82bbe80322857d863185ef54cfcc8c38"
+  },
+  "c_src/odpi/test/test_2800_lobs.c": {
+    "mtime": 1768887815.3396568,
+    "ast_hash": "d57cb109851746f377f38f548379f786",
+    "semantic_hash": "d57cb109851746f377f38f548379f786"
+  },
+  "c_src/odpi/test/test_2900_implicit_results.c": {
+    "mtime": 1768887815.3397849,
+    "ast_hash": "15441d3feafffb1bc5c5ecfd310d15e9",
+    "semantic_hash": "15441d3feafffb1bc5c5ecfd310d15e9"
+  },
+  "c_src/odpi/test/test_3000_scroll_cursors.c": {
+    "mtime": 1768887815.3398838,
+    "ast_hash": "ebe6a7549b2b8616ffafc3c6502adb18",
+    "semantic_hash": "ebe6a7549b2b8616ffafc3c6502adb18"
+  },
+  "c_src/odpi/test/test_3100_subscriptions.c": {
+    "mtime": 1768887815.3400066,
+    "ast_hash": "c4dc15436877c4533e64a645b10f642b",
+    "semantic_hash": "c4dc15436877c4533e64a645b10f642b"
+  },
+  "c_src/odpi/test/test_3200_batch_errors.c": {
+    "mtime": 1768887815.3401515,
+    "ast_hash": "3f600a35e7e63f0bce324bb005df2d02",
+    "semantic_hash": "3f600a35e7e63f0bce324bb005df2d02"
+  },
+  "c_src/odpi/test/test_3300_dml_returning.c": {
+    "mtime": 1768887815.3402798,
+    "ast_hash": "914f9f5e886d1baf114fbde5bffb0e3e",
+    "semantic_hash": "914f9f5e886d1baf114fbde5bffb0e3e"
+  },
+  "c_src/odpi/test/test_3400_soda_db.c": {
+    "mtime": 1768887815.3403924,
+    "ast_hash": "6dbd73695ae2c8b7ff8d56863d7c599a",
+    "semantic_hash": "6dbd73695ae2c8b7ff8d56863d7c599a"
+  },
+  "c_src/odpi/test/test_3500_soda_coll.c": {
+    "mtime": 1768887815.3404946,
+    "ast_hash": "07d409161a0be708f188cd8d2d893593",
+    "semantic_hash": "07d409161a0be708f188cd8d2d893593"
+  },
+  "c_src/odpi/test/test_3600_soda_coll_cursor.c": {
+    "mtime": 1768887815.3405776,
+    "ast_hash": "cc9af19908d4694da26b74e001cdc6d0",
+    "semantic_hash": "cc9af19908d4694da26b74e001cdc6d0"
+  },
+  "c_src/odpi/test/test_3700_soda_doc.c": {
+    "mtime": 1768887815.3406813,
+    "ast_hash": "1076ac6bad12d0116ff774a934821a5c",
+    "semantic_hash": "1076ac6bad12d0116ff774a934821a5c"
+  },
+  "c_src/odpi/test/test_3800_soda_doc_cursor.c": {
+    "mtime": 1768887815.340799,
+    "ast_hash": "9f7ce96fb018f7be3b091d5ae2704fc0",
+    "semantic_hash": "9f7ce96fb018f7be3b091d5ae2704fc0"
+  },
+  "c_src/odpi/test/test_3900_sess_tags.c": {
+    "mtime": 1768887815.3409212,
+    "ast_hash": "57e0536cde57e7078ee82b5bea1e26d4",
+    "semantic_hash": "57e0536cde57e7078ee82b5bea1e26d4"
+  },
+  "c_src/odpi/test/test_4000_queue.c": {
+    "mtime": 1768887815.3410258,
+    "ast_hash": "527537168595aa8470b6bdeb70ef2b33",
+    "semantic_hash": "527537168595aa8470b6bdeb70ef2b33"
+  },
+  "c_src/odpi/test/test_4100_binds.c": {
+    "mtime": 1768887815.3412097,
+    "ast_hash": "80b30da0bca1ef1b2be0ea903840c6ad",
+    "semantic_hash": "80b30da0bca1ef1b2be0ea903840c6ad"
+  },
+  "c_src/odpi/test/test_4200_rowids.c": {
+    "mtime": 1768887815.3413174,
+    "ast_hash": "59953cb5e9e8bbea18557b7fc39877e5",
+    "semantic_hash": "59953cb5e9e8bbea18557b7fc39877e5"
+  },
+  "c_src/odpi/test/test_4300_json.c": {
+    "mtime": 1768887815.3414192,
+    "ast_hash": "f46470691822f86365b46c2c85d4ea94",
+    "semantic_hash": "f46470691822f86365b46c2c85d4ea94"
+  },
+  "c_src/odpi/test/test_4400_vector.c": {
+    "mtime": 1768887815.3415217,
+    "ast_hash": "f49cd99609b54e6e591d05453e8dcaef",
+    "semantic_hash": "f49cd99609b54e6e591d05453e8dcaef"
+  },
+  "c_src/odpi/test/test_4500_sessionless_txn.c": {
+    "mtime": 1768887815.3416815,
+    "ast_hash": "bbcc7cbc1c4838bd205fd99a343812e7",
+    "semantic_hash": "bbcc7cbc1c4838bd205fd99a343812e7"
+  },
+  "c_src/odpi/test/valgrind/run.sh": {
+    "mtime": 1768887815.3417983,
+    "ast_hash": "0b0156a912672911c0fc524480cdae14",
+    "semantic_hash": "0b0156a912672911c0fc524480cdae14"
+  },
+  "c_src/odpi/util/tracing/mem_leak.py": {
+    "mtime": 1768887815.3420615,
+    "ast_hash": "e7f208591e609e49a402a325d287de12",
+    "semantic_hash": "e7f208591e609e49a402a325d287de12"
+  },
+  "docker/init/01_create_user.sql": {
+    "mtime": 1768704401.1355417,
+    "ast_hash": "ab46c19e535c9327a8bce52dbeb979c4",
+    "semantic_hash": "ab46c19e535c9327a8bce52dbeb979c4"
+  },
+  "lib/ecto/adapters/oracle.ex": {
+    "mtime": 1768615997.9430892,
+    "ast_hash": "d6913ac51a4601e5726546379781d236",
+    "semantic_hash": "d6913ac51a4601e5726546379781d236"
+  },
+  "lib/ecto/adapters/oracle/connection.ex": {
+    "mtime": 1768695370.7907522,
+    "ast_hash": "dd403baae62efe19441b58130769bc37",
+    "semantic_hash": "dd403baae62efe19441b58130769bc37"
+  },
+  "lib/inexora.ex": {
+    "mtime": 1768615997.943434,
+    "ast_hash": "33a7fa973b25c5516f1679de7232c585",
+    "semantic_hash": "33a7fa973b25c5516f1679de7232c585"
+  },
+  "lib/inexora/batch.ex": {
+    "mtime": 1768615997.9436214,
+    "ast_hash": "3b460526afacd6ce5cb9b562291c869b",
+    "semantic_hash": "3b460526afacd6ce5cb9b562291c869b"
+  },
+  "lib/inexora/connection.ex": {
+    "mtime": 1771108161.6195598,
+    "ast_hash": "d5a24722ae1368b9b6825eb260927c0b",
+    "semantic_hash": "d5a24722ae1368b9b6825eb260927c0b"
+  },
+  "lib/inexora/cursor.ex": {
+    "mtime": 1768694469.0,
+    "ast_hash": "2cf9f81c668e09500d96097b92af96de",
+    "semantic_hash": "2cf9f81c668e09500d96097b92af96de"
+  },
+  "lib/inexora/error.ex": {
+    "mtime": 1768615997.9440017,
+    "ast_hash": "bef50f47acb5f4030b14400323deaa81",
+    "semantic_hash": "bef50f47acb5f4030b14400323deaa81"
+  },
+  "lib/inexora/nif.ex": {
+    "mtime": 1768689070.4311917,
+    "ast_hash": "8ffd799b83df769b9d0ef0f7d911842b",
+    "semantic_hash": "8ffd799b83df769b9d0ef0f7d911842b"
+  },
+  "lib/inexora/query.ex": {
+    "mtime": 1768694256.726589,
+    "ast_hash": "503992073244db23eb621f152ca60d30",
+    "semantic_hash": "503992073244db23eb621f152ca60d30"
+  },
+  "lib/inexora/result.ex": {
+    "mtime": 1768694267.9655833,
+    "ast_hash": "18cf1f64e0e47f541029dfc01750d317",
+    "semantic_hash": "18cf1f64e0e47f541029dfc01750d317"
+  },
+  "lib/inexora/type.ex": {
+    "mtime": 1768615997.9444432,
+    "ast_hash": "8997c923ce885eaabf4baa334ae0d7a0",
+    "semantic_hash": "8997c923ce885eaabf4baa334ae0d7a0"
+  },
+  "mix.exs": {
+    "mtime": 1771108161.6198764,
+    "ast_hash": "4a3d24d88cb0f4ba1f674f8d2247f9f3",
+    "semantic_hash": "4a3d24d88cb0f4ba1f674f8d2247f9f3"
+  },
+  "test/ecto/adapters/oracle_integration_test.exs": {
+    "mtime": 1768695473.2230358,
+    "ast_hash": "233c945547017d858a16ddaa91c8bbde",
+    "semantic_hash": "233c945547017d858a16ddaa91c8bbde"
+  },
+  "test/ecto/adapters/oracle_test.exs": {
+    "mtime": 1768615997.945143,
+    "ast_hash": "dcbb2c6f8e5b1e55cbc198cd9b8cf7e9",
+    "semantic_hash": "dcbb2c6f8e5b1e55cbc198cd9b8cf7e9"
+  },
+  "test/inexora/batch_binding_test.exs": {
+    "mtime": 1768615997.9453425,
+    "ast_hash": "66fe898ea22951883ea667f6cad1be5f",
+    "semantic_hash": "66fe898ea22951883ea667f6cad1be5f"
+  },
+  "test/inexora/batch_test.exs": {
+    "mtime": 1768615997.9455001,
+    "ast_hash": "3d1d0dedc6743a29c49e729f44343ce8",
+    "semantic_hash": "3d1d0dedc6743a29c49e729f44343ce8"
+  },
+  "test/inexora/connection_test.exs": {
+    "mtime": 1771108161.6203742,
+    "ast_hash": "07467a26a17ee689c1762d17228032bf",
+    "semantic_hash": "07467a26a17ee689c1762d17228032bf"
+  },
+  "test/inexora/cursor_test.exs": {
+    "mtime": 1768615997.9457705,
+    "ast_hash": "603e8f9ab728404513e4dbec8f53c50b",
+    "semantic_hash": "603e8f9ab728404513e4dbec8f53c50b"
+  },
+  "test/inexora/error_test.exs": {
+    "mtime": 1768615997.945925,
+    "ast_hash": "a967c2fcf9c9812e7491108f0bff8f51",
+    "semantic_hash": "a967c2fcf9c9812e7491108f0bff8f51"
+  },
+  "test/inexora/float_type_test.exs": {
+    "mtime": 1768615997.9460342,
+    "ast_hash": "976c86c3212c3978b196c1c239e9892f",
+    "semantic_hash": "976c86c3212c3978b196c1c239e9892f"
+  },
+  "test/inexora/interval_type_test.exs": {
+    "mtime": 1768615997.9461417,
+    "ast_hash": "bb0f48948ac0065676e73e5e4a58678c",
+    "semantic_hash": "bb0f48948ac0065676e73e5e4a58678c"
+  },
+  "test/inexora/named_params_test.exs": {
+    "mtime": 1768615997.9462948,
+    "ast_hash": "783b320d2840a60026d2804271a21a81",
+    "semantic_hash": "783b320d2840a60026d2804271a21a81"
+  },
+  "test/inexora/nif_connection_test.exs": {
+    "mtime": 1768615997.9463913,
+    "ast_hash": "daf75ae3a30502113b1fdb7aec1d4e2a",
+    "semantic_hash": "daf75ae3a30502113b1fdb7aec1d4e2a"
+  },
+  "test/inexora/nif_test.exs": {
+    "mtime": 1768689070.4314017,
+    "ast_hash": "b08f1fb3b93508a72a240d90c7943dbd",
+    "semantic_hash": "b08f1fb3b93508a72a240d90c7943dbd"
+  },
+  "test/inexora/query_execution_test.exs": {
+    "mtime": 1768615997.9466095,
+    "ast_hash": "b12c1b0665b3a19afe558fa65490e9ae",
+    "semantic_hash": "b12c1b0665b3a19afe558fa65490e9ae"
+  },
+  "test/inexora/query_test.exs": {
+    "mtime": 1768615997.9467292,
+    "ast_hash": "907f0da10ae94b0aa0ff1f5e8f3079ab",
+    "semantic_hash": "907f0da10ae94b0aa0ff1f5e8f3079ab"
+  },
+  "test/inexora/raw_type_test.exs": {
+    "mtime": 1768615997.9468358,
+    "ast_hash": "4efa451a57b29f4875b8200f4889c09a",
+    "semantic_hash": "4efa451a57b29f4875b8200f4889c09a"
+  },
+  "test/inexora/result_test.exs": {
+    "mtime": 1768615997.9469242,
+    "ast_hash": "7196c85f9c95efe5f9f4ca0dacde4929",
+    "semantic_hash": "7196c85f9c95efe5f9f4ca0dacde4929"
+  },
+  "test/inexora/returning_test.exs": {
+    "mtime": 1768615997.947066,
+    "ast_hash": "ad863741bc3b6c9b1e08c6839a212bcf",
+    "semantic_hash": "ad863741bc3b6c9b1e08c6839a212bcf"
+  },
+  "test/inexora/rowid_type_test.exs": {
+    "mtime": 1768615997.947159,
+    "ast_hash": "b55558b400c3b88ffd07b35a3f3bfcbe",
+    "semantic_hash": "b55558b400c3b88ffd07b35a3f3bfcbe"
+  },
+  "test/inexora/type_test.exs": {
+    "mtime": 1768615997.947257,
+    "ast_hash": "293ab3bb81d5be2568f025cba0235161",
+    "semantic_hash": "293ab3bb81d5be2568f025cba0235161"
+  },
+  "test/inexora_test.exs": {
+    "mtime": 1768615997.9473462,
+    "ast_hash": "f885b29daa333e3f30d0144d6256a551",
+    "semantic_hash": "f885b29daa333e3f30d0144d6256a551"
+  },
+  "test/support/sql/DropTest.sql": {
+    "mtime": 1768615997.9475925,
+    "ast_hash": "8fbd8591115a2d01a5db72fc3b7c5e18",
+    "semantic_hash": "8fbd8591115a2d01a5db72fc3b7c5e18"
+  },
+  "test/support/sql/SetupTest.sql": {
+    "mtime": 1768615997.9476953,
+    "ast_hash": "452bb229a41c1f9ad2f1647279338893",
+    "semantic_hash": "452bb229a41c1f9ad2f1647279338893"
+  },
+  "test/support/sql/TestEnv.sql": {
+    "mtime": 1768615997.9478238,
+    "ast_hash": "52038f71a69ce3ca6275df041d712935",
+    "semantic_hash": "52038f71a69ce3ca6275df041d712935"
+  },
+  "test/support/test_helpers.ex": {
+    "mtime": 1768953615.0243034,
+    "ast_hash": "82f1906d9debd5e3cbda20aadffd62d6",
+    "semantic_hash": "82f1906d9debd5e3cbda20aadffd62d6"
+  },
+  "test/test_helper.exs": {
+    "mtime": 1768953615.024473,
+    "ast_hash": "f54174d21ef69a642c49fcfa5f02924b",
+    "semantic_hash": "f54174d21ef69a642c49fcfa5f02924b"
+  },
+  "2026-01-15-what-are-we-trying-to-accomplish.txt": {
+    "mtime": 1768615997.9417186,
+    "ast_hash": "03667c305cfff0dcacbf036ecdfeef6d",
+    "semantic_hash": "03667c305cfff0dcacbf036ecdfeef6d"
+  },
+  "2026-01-16-implement-the-following-plan.txt": {
+    "mtime": 1768615997.941958,
+    "ast_hash": "4665fa5386433ac7b3ba5013ec8bfcab",
+    "semantic_hash": "4665fa5386433ac7b3ba5013ec8bfcab"
+  },
+  "CLAUDE.md": {
+    "mtime": 1768874328.306848,
+    "ast_hash": "bd6a962ccce2509f0ec623bf20e579d8",
+    "semantic_hash": "bd6a962ccce2509f0ec623bf20e579d8"
+  },
+  "README.md": {
+    "mtime": 1768874328.3071241,
+    "ast_hash": "79c05d4e374d83311ac813e993f5a4ce",
+    "semantic_hash": "79c05d4e374d83311ac813e993f5a4ce"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/announcements.md": {
+    "mtime": 1768887815.3105774,
+    "ast_hash": "46d1947e5c931fedc2f84507d7adbea4",
+    "semantic_hash": "46d1947e5c931fedc2f84507d7adbea4"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/bug_report.md": {
+    "mtime": 1768887815.3106728,
+    "ast_hash": "337efdffecd90cc6b3c4ea0e6c74728b",
+    "semantic_hash": "337efdffecd90cc6b3c4ea0e6c74728b"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/config.yml": {
+    "mtime": 1768887815.310747,
+    "ast_hash": "74c7aebcc7755d1241890df4fd87c662",
+    "semantic_hash": "74c7aebcc7755d1241890df4fd87c662"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/documentation-and-example-improvements.md": {
+    "mtime": 1768887815.310822,
+    "ast_hash": "149202b1ba18425f91724337a38aafba",
+    "semantic_hash": "149202b1ba18425f91724337a38aafba"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/enhancement-requests.md": {
+    "mtime": 1768887815.3108919,
+    "ast_hash": "372b397beb5f7c2fd0bfae29d68fb1a7",
+    "semantic_hash": "372b397beb5f7c2fd0bfae29d68fb1a7"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/general-questions-and-runtime-problems.md": {
+    "mtime": 1768887815.3109663,
+    "ast_hash": "2c0cf687d2110b7410bccdfa945743f4",
+    "semantic_hash": "2c0cf687d2110b7410bccdfa945743f4"
+  },
+  "c_src/odpi/.github/ISSUE_TEMPLATE/installation-questions.md": {
+    "mtime": 1768887815.311042,
+    "ast_hash": "1e93228a7ed172ea2579ec13c47a15af",
+    "semantic_hash": "1e93228a7ed172ea2579ec13c47a15af"
+  },
+  "c_src/odpi/.github/pull_request_template.md": {
+    "mtime": 1768887815.3111138,
+    "ast_hash": "c467af921a82fe6abd113c2246b3ae77",
+    "semantic_hash": "c467af921a82fe6abd113c2246b3ae77"
+  },
+  "c_src/odpi/.github/stale.yml": {
+    "mtime": 1768887815.311187,
+    "ast_hash": "9a185b897315cde2b13b6173d3984c63",
+    "semantic_hash": "9a185b897315cde2b13b6173d3984c63"
+  },
+  "c_src/odpi/.readthedocs.yaml": {
+    "mtime": 1768887815.3113215,
+    "ast_hash": "470b22624d8aa41b700672b343e4f27d",
+    "semantic_hash": "470b22624d8aa41b700672b343e4f27d"
+  },
+  "c_src/odpi/CONTRIBUTING.md": {
+    "mtime": 1768887815.3113856,
+    "ast_hash": "eb04bd6042c841f0e4645e856e587512",
+    "semantic_hash": "eb04bd6042c841f0e4645e856e587512"
+  },
+  "c_src/odpi/LICENSE.txt": {
+    "mtime": 1768887815.3115978,
+    "ast_hash": "930c6830630e2115f953c62a71ef8dcb",
+    "semantic_hash": "930c6830630e2115f953c62a71ef8dcb"
+  },
+  "c_src/odpi/NOTICE.txt": {
+    "mtime": 1768887815.3119264,
+    "ast_hash": "710bb0b828530c4390315056e4bf4721",
+    "semantic_hash": "710bb0b828530c4390315056e4bf4721"
+  },
+  "c_src/odpi/README.md": {
+    "mtime": 1768887815.3120105,
+    "ast_hash": "548fdec550e2e924def1796af7adc0de",
+    "semantic_hash": "548fdec550e2e924def1796af7adc0de"
+  },
+  "c_src/odpi/SECURITY.md": {
+    "mtime": 1768887815.3120933,
+    "ast_hash": "37b6107586fa70848489d15b0a6f1116",
+    "semantic_hash": "37b6107586fa70848489d15b0a6f1116"
+  },
+  "c_src/odpi/doc/README.md": {
+    "mtime": 1768887815.312418,
+    "ast_hash": "ca24fba8bb8e47d69bd12da2a5d95e25",
+    "semantic_hash": "ca24fba8bb8e47d69bd12da2a5d95e25"
+  },
+  "c_src/odpi/doc/requirements.txt": {
+    "mtime": 1768887815.31249,
+    "ast_hash": "2370e1459142d98f199203fad49c8109",
+    "semantic_hash": "2370e1459142d98f199203fad49c8109"
+  },
+  "c_src/odpi/doc/src/enums/dpiAuthMode.rst": {
+    "mtime": 1768887815.3130414,
+    "ast_hash": "7cb2e3b677d02f295505c8785ed99baf",
+    "semantic_hash": "7cb2e3b677d02f295505c8785ed99baf"
+  },
+  "c_src/odpi/doc/src/enums/dpiConnCloseMode.rst": {
+    "mtime": 1768887815.3131204,
+    "ast_hash": "4ed7fdb6ebcd7cd35b1b6d9a01a0cf51",
+    "semantic_hash": "4ed7fdb6ebcd7cd35b1b6d9a01a0cf51"
+  },
+  "c_src/odpi/doc/src/enums/dpiCreateMode.rst": {
+    "mtime": 1768887815.3131905,
+    "ast_hash": "4ecf3d49bcfb6c0ffb89a50e1025cad2",
+    "semantic_hash": "4ecf3d49bcfb6c0ffb89a50e1025cad2"
+  },
+  "c_src/odpi/doc/src/enums/dpiDeqMode.rst": {
+    "mtime": 1768887815.3132684,
+    "ast_hash": "439d4ff0b70d9f15d7d7d8bbc919e2ce",
+    "semantic_hash": "439d4ff0b70d9f15d7d7d8bbc919e2ce"
+  },
+  "c_src/odpi/doc/src/enums/dpiDeqNavigation.rst": {
+    "mtime": 1768887815.3133438,
+    "ast_hash": "32a36bdc2e83e22a52bb6dac65cf7784",
+    "semantic_hash": "32a36bdc2e83e22a52bb6dac65cf7784"
+  },
+  "c_src/odpi/doc/src/enums/dpiEventType.rst": {
+    "mtime": 1768887815.3134136,
+    "ast_hash": "90f4f6a1f9f7059ee4e39f9b86bdcc6f",
+    "semantic_hash": "90f4f6a1f9f7059ee4e39f9b86bdcc6f"
+  },
+  "c_src/odpi/doc/src/enums/dpiExecMode.rst": {
+    "mtime": 1768887815.3134892,
+    "ast_hash": "6fa357709b7063fc1544ed5aeeaf9b16",
+    "semantic_hash": "6fa357709b7063fc1544ed5aeeaf9b16"
+  },
+  "c_src/odpi/doc/src/enums/dpiFetchMode.rst": {
+    "mtime": 1768887815.313555,
+    "ast_hash": "ccc5dfd2670939813b81eed6c70ef01c",
+    "semantic_hash": "ccc5dfd2670939813b81eed6c70ef01c"
+  },
+  "c_src/odpi/doc/src/enums/dpiJsonOptions.rst": {
+    "mtime": 1768887815.313625,
+    "ast_hash": "4b7571920fa65cea55e6b0a500c0383b",
+    "semantic_hash": "4b7571920fa65cea55e6b0a500c0383b"
+  },
+  "c_src/odpi/doc/src/enums/dpiMessageDeliveryMode.rst": {
+    "mtime": 1768887815.313705,
+    "ast_hash": "f81506f1df4767de8637bf937b3b9453",
+    "semantic_hash": "f81506f1df4767de8637bf937b3b9453"
+  },
+  "c_src/odpi/doc/src/enums/dpiMessageState.rst": {
+    "mtime": 1768887815.3137782,
+    "ast_hash": "82aa50672d6d188832ed3f7214f7f9ee",
+    "semantic_hash": "82aa50672d6d188832ed3f7214f7f9ee"
+  },
+  "c_src/odpi/doc/src/enums/dpiNativeTypeNum.rst": {
+    "mtime": 1768887815.313849,
+    "ast_hash": "cae54e1c55647cf7733b3af109c99e87",
+    "semantic_hash": "cae54e1c55647cf7733b3af109c99e87"
+  },
+  "c_src/odpi/doc/src/enums/dpiOpCode.rst": {
+    "mtime": 1768887815.313921,
+    "ast_hash": "6223e9d4425a10544ea60ab7cb534f44",
+    "semantic_hash": "6223e9d4425a10544ea60ab7cb534f44"
+  },
+  "c_src/odpi/doc/src/enums/dpiOracleTypeNum.rst": {
+    "mtime": 1768887815.3140364,
+    "ast_hash": "466c8003a29a37eb197d6d9a4adcc165",
+    "semantic_hash": "466c8003a29a37eb197d6d9a4adcc165"
+  },
+  "c_src/odpi/doc/src/enums/dpiPoolCloseMode.rst": {
+    "mtime": 1768887815.3141181,
+    "ast_hash": "f2ed1deeed51f96021b17925042f948a",
+    "semantic_hash": "f2ed1deeed51f96021b17925042f948a"
+  },
+  "c_src/odpi/doc/src/enums/dpiPoolGetMode.rst": {
+    "mtime": 1768887815.3141897,
+    "ast_hash": "82e3f09926a695b77203723e9e109305",
+    "semantic_hash": "82e3f09926a695b77203723e9e109305"
+  },
+  "c_src/odpi/doc/src/enums/dpiPurity.rst": {
+    "mtime": 1768887815.3142602,
+    "ast_hash": "3307bda4927da02cebaace29691563f6",
+    "semantic_hash": "3307bda4927da02cebaace29691563f6"
+  },
+  "c_src/odpi/doc/src/enums/dpiServerType.rst": {
+    "mtime": 1768887815.314325,
+    "ast_hash": "180221233cdbb25a8fe8ebf8276ef036",
+    "semantic_hash": "180221233cdbb25a8fe8ebf8276ef036"
+  },
+  "c_src/odpi/doc/src/enums/dpiShutdownMode.rst": {
+    "mtime": 1768887815.3144014,
+    "ast_hash": "d4b5c0828638772b5f09341190198a54",
+    "semantic_hash": "d4b5c0828638772b5f09341190198a54"
+  },
+  "c_src/odpi/doc/src/enums/dpiSodaFlags.rst": {
+    "mtime": 1768887815.3144665,
+    "ast_hash": "57dab1f3dc659600650d93577e053a11",
+    "semantic_hash": "57dab1f3dc659600650d93577e053a11"
+  },
+  "c_src/odpi/doc/src/enums/dpiStartupMode.rst": {
+    "mtime": 1768887815.3145363,
+    "ast_hash": "07f00d593615c517f86a8fdbbc9678de",
+    "semantic_hash": "07f00d593615c517f86a8fdbbc9678de"
+  },
+  "c_src/odpi/doc/src/enums/dpiStatementType.rst": {
+    "mtime": 1768887815.3146124,
+    "ast_hash": "8cd98f1b53b34196ed27b9f1b72413dc",
+    "semantic_hash": "8cd98f1b53b34196ed27b9f1b72413dc"
+  },
+  "c_src/odpi/doc/src/enums/dpiSubscrGroupingClass.rst": {
+    "mtime": 1768887815.3146868,
+    "ast_hash": "dfc88a27fbfad44870142d017ae094e5",
+    "semantic_hash": "dfc88a27fbfad44870142d017ae094e5"
+  },
+  "c_src/odpi/doc/src/enums/dpiSubscrGroupingType.rst": {
+    "mtime": 1768887815.3147542,
+    "ast_hash": "7e3978e8aac47b86a85ea562c900548d",
+    "semantic_hash": "7e3978e8aac47b86a85ea562c900548d"
+  },
+  "c_src/odpi/doc/src/enums/dpiSubscrNamespace.rst": {
+    "mtime": 1768887815.314821,
+    "ast_hash": "eaf025d58c52125bee292bfa290ce803",
+    "semantic_hash": "eaf025d58c52125bee292bfa290ce803"
+  },
+  "c_src/odpi/doc/src/enums/dpiSubscrProtocol.rst": {
+    "mtime": 1768887815.3148854,
+    "ast_hash": "febaf8253cd18001896ed653d106f0c3",
+    "semantic_hash": "febaf8253cd18001896ed653d106f0c3"
+  },
+  "c_src/odpi/doc/src/enums/dpiSubscrQOS.rst": {
+    "mtime": 1768887815.3149712,
+    "ast_hash": "3ffaa751408b8552be097ec13b2cfae0",
+    "semantic_hash": "3ffaa751408b8552be097ec13b2cfae0"
+  },
+  "c_src/odpi/doc/src/enums/dpiTpcBeginFlags.rst": {
+    "mtime": 1768887815.3150487,
+    "ast_hash": "4d0b6663f2be2bed5820dd1f679d6950",
+    "semantic_hash": "4d0b6663f2be2bed5820dd1f679d6950"
+  },
+  "c_src/odpi/doc/src/enums/dpiTpcEndFlags.rst": {
+    "mtime": 1768887815.31512,
+    "ast_hash": "a923228b3248f87e8a80950358bc8207",
+    "semantic_hash": "a923228b3248f87e8a80950358bc8207"
+  },
+  "c_src/odpi/doc/src/enums/dpiVectorFlags.rst": {
+    "mtime": 1768887815.3151855,
+    "ast_hash": "7a3c39196dcaf20726e756b3ff6c97f3",
+    "semantic_hash": "7a3c39196dcaf20726e756b3ff6c97f3"
+  },
+  "c_src/odpi/doc/src/enums/dpiVectorFormat.rst": {
+    "mtime": 1768887815.315276,
+    "ast_hash": "7c5b45e56d2ee54d572d61bde463ac76",
+    "semantic_hash": "7c5b45e56d2ee54d572d61bde463ac76"
+  },
+  "c_src/odpi/doc/src/enums/dpiVisibility.rst": {
+    "mtime": 1768887815.3153787,
+    "ast_hash": "99569cbbaad786fdf443555db6289d6d",
+    "semantic_hash": "99569cbbaad786fdf443555db6289d6d"
+  },
+  "c_src/odpi/doc/src/enums/index.rst": {
+    "mtime": 1768887815.31551,
+    "ast_hash": "c82d6b9e7f24f2b23f10048dd2130082",
+    "semantic_hash": "c82d6b9e7f24f2b23f10048dd2130082"
+  },
+  "c_src/odpi/doc/src/functions/dpiConn.rst": {
+    "mtime": 1768887815.3157597,
+    "ast_hash": "0194d4b3bc147cb9f97af291ef8b06e6",
+    "semantic_hash": "0194d4b3bc147cb9f97af291ef8b06e6"
+  },
+  "c_src/odpi/doc/src/functions/dpiContext.rst": {
+    "mtime": 1768887815.3159053,
+    "ast_hash": "bdc91ccca978caa8d5d57778d9bb5b6a",
+    "semantic_hash": "bdc91ccca978caa8d5d57778d9bb5b6a"
+  },
+  "c_src/odpi/doc/src/functions/dpiData.rst": {
+    "mtime": 1768887815.3160195,
+    "ast_hash": "d75beb63cfdbd626283e739053e9b632",
+    "semantic_hash": "d75beb63cfdbd626283e739053e9b632"
+  },
+  "c_src/odpi/doc/src/functions/dpiDeqOptions.rst": {
+    "mtime": 1768887815.3161564,
+    "ast_hash": "cfe00043e28a1ee3db6ede86c28fb71b",
+    "semantic_hash": "cfe00043e28a1ee3db6ede86c28fb71b"
+  },
+  "c_src/odpi/doc/src/functions/dpiEnqOptions.rst": {
+    "mtime": 1768887815.3164485,
+    "ast_hash": "0869d25309eb61ad8c35bf06721b793d",
+    "semantic_hash": "0869d25309eb61ad8c35bf06721b793d"
+  },
+  "c_src/odpi/doc/src/functions/dpiJson.rst": {
+    "mtime": 1768887815.3165812,
+    "ast_hash": "6341fab1aec2591457dce40d20bbccf7",
+    "semantic_hash": "6341fab1aec2591457dce40d20bbccf7"
+  },
+  "c_src/odpi/doc/src/functions/dpiLob.rst": {
+    "mtime": 1768887815.3168726,
+    "ast_hash": "a34640fadb7a23699ae6884b30dad11f",
+    "semantic_hash": "a34640fadb7a23699ae6884b30dad11f"
+  },
+  "c_src/odpi/doc/src/functions/dpiMsgProps.rst": {
+    "mtime": 1768887815.3170512,
+    "ast_hash": "d4b3ed95790fe5791526cdff0ea97bf9",
+    "semantic_hash": "d4b3ed95790fe5791526cdff0ea97bf9"
+  },
+  "c_src/odpi/doc/src/functions/dpiObject.rst": {
+    "mtime": 1768887815.3171716,
+    "ast_hash": "b89db20d8938866a7e807064a0328d23",
+    "semantic_hash": "b89db20d8938866a7e807064a0328d23"
+  },
+  "c_src/odpi/doc/src/functions/dpiObjectAttr.rst": {
+    "mtime": 1768887815.3173141,
+    "ast_hash": "1c876b3752c575ec1816d29cbee4c0d3",
+    "semantic_hash": "1c876b3752c575ec1816d29cbee4c0d3"
+  },
+  "c_src/odpi/doc/src/functions/dpiObjectType.rst": {
+    "mtime": 1768887815.3176253,
+    "ast_hash": "423ad97bd6245ff1b1048d0f3cc951cb",
+    "semantic_hash": "423ad97bd6245ff1b1048d0f3cc951cb"
+  },
+  "c_src/odpi/doc/src/functions/dpiPool.rst": {
+    "mtime": 1768887815.3177893,
+    "ast_hash": "b28de194f31bd6d33893fcc7c07e9b78",
+    "semantic_hash": "b28de194f31bd6d33893fcc7c07e9b78"
+  },
+  "c_src/odpi/doc/src/functions/dpiQueue.rst": {
+    "mtime": 1768887815.3179986,
+    "ast_hash": "9030d09ac7ef9960ec1e87f6f9dc0764",
+    "semantic_hash": "9030d09ac7ef9960ec1e87f6f9dc0764"
+  },
+  "c_src/odpi/doc/src/functions/dpiRowid.rst": {
+    "mtime": 1768887815.3180995,
+    "ast_hash": "c35e4ac31ac1b9f4b94ecbd28faf458a",
+    "semantic_hash": "c35e4ac31ac1b9f4b94ecbd28faf458a"
+  },
+  "c_src/odpi/doc/src/functions/dpiSodaColl.rst": {
+    "mtime": 1768887815.318212,
+    "ast_hash": "0f33b199398a36b8b9da49e15a9f3f33",
+    "semantic_hash": "0f33b199398a36b8b9da49e15a9f3f33"
+  },
+  "c_src/odpi/doc/src/functions/dpiSodaCollCursor.rst": {
+    "mtime": 1768887815.3183215,
+    "ast_hash": "958692f1ba0cb317e9077c92bfd23a30",
+    "semantic_hash": "958692f1ba0cb317e9077c92bfd23a30"
+  },
+  "c_src/odpi/doc/src/functions/dpiSodaDb.rst": {
+    "mtime": 1768887815.3184628,
+    "ast_hash": "0d3e2ef9d5d8929794ac566cb66f7ecf",
+    "semantic_hash": "0d3e2ef9d5d8929794ac566cb66f7ecf"
+  },
+  "c_src/odpi/doc/src/functions/dpiSodaDoc.rst": {
+    "mtime": 1768887815.31858,
+    "ast_hash": "09d8c50fb660a5f6cee454de9a972642",
+    "semantic_hash": "09d8c50fb660a5f6cee454de9a972642"
+  },
+  "c_src/odpi/doc/src/functions/dpiSodaDocCursor.rst": {
+    "mtime": 1768887815.318667,
+    "ast_hash": "a0a95861eaaf8cd7a235afef91ceb32d",
+    "semantic_hash": "a0a95861eaaf8cd7a235afef91ceb32d"
+  },
+  "c_src/odpi/doc/src/functions/dpiStmt.rst": {
+    "mtime": 1768887815.3188457,
+    "ast_hash": "a8c60bcad8941b352b60b3047af5cf88",
+    "semantic_hash": "a8c60bcad8941b352b60b3047af5cf88"
+  },
+  "c_src/odpi/doc/src/functions/dpiSubscr.rst": {
+    "mtime": 1768887815.318968,
+    "ast_hash": "d1b57247f287aef7732ab9ade2bcd2ee",
+    "semantic_hash": "d1b57247f287aef7732ab9ade2bcd2ee"
+  },
+  "c_src/odpi/doc/src/functions/dpiVar.rst": {
+    "mtime": 1768887815.31907,
+    "ast_hash": "e85bf5fe5b1c03fc63bb92611e76d83a",
+    "semantic_hash": "e85bf5fe5b1c03fc63bb92611e76d83a"
+  },
+  "c_src/odpi/doc/src/functions/dpiVector.rst": {
+    "mtime": 1768887815.3191597,
+    "ast_hash": "7af3085cf980b9d6cb91bc014e3ce2c4",
+    "semantic_hash": "7af3085cf980b9d6cb91bc014e3ce2c4"
+  },
+  "c_src/odpi/doc/src/functions/index.rst": {
+    "mtime": 1768887815.3192399,
+    "ast_hash": "42d056db9ad2af321a7084e8c50fda48",
+    "semantic_hash": "42d056db9ad2af321a7084e8c50fda48"
+  },
+  "c_src/odpi/doc/src/index.rst": {
+    "mtime": 1768887815.3193493,
+    "ast_hash": "b2e38ee0c5eb55613774f18d88911f80",
+    "semantic_hash": "b2e38ee0c5eb55613774f18d88911f80"
+  },
+  "c_src/odpi/doc/src/license.rst": {
+    "mtime": 1768887815.3194585,
+    "ast_hash": "a29879e570c576967785f4aa240cca96",
+    "semantic_hash": "a29879e570c576967785f4aa240cca96"
+  },
+  "c_src/odpi/doc/src/releasenotes.rst": {
+    "mtime": 1768887815.3196685,
+    "ast_hash": "c0721324442abbb5856dc3d46653c9fb",
+    "semantic_hash": "c0721324442abbb5856dc3d46653c9fb"
+  },
+  "c_src/odpi/doc/src/structs/dpiAccessToken.rst": {
+    "mtime": 1768887815.3199594,
+    "ast_hash": "49f43e3c39d2efd676f14a3355671885",
+    "semantic_hash": "49f43e3c39d2efd676f14a3355671885"
+  },
+  "c_src/odpi/doc/src/structs/dpiAnnotation.rst": {
+    "mtime": 1768887815.3200567,
+    "ast_hash": "5b51904cdaebf47d585f96ebf72d2c73",
+    "semantic_hash": "5b51904cdaebf47d585f96ebf72d2c73"
+  },
+  "c_src/odpi/doc/src/structs/dpiAppContext.rst": {
+    "mtime": 1768887815.3201337,
+    "ast_hash": "ab736de64f0cd1152790d1b1d5f223a8",
+    "semantic_hash": "ab736de64f0cd1152790d1b1d5f223a8"
+  },
+  "c_src/odpi/doc/src/structs/dpiBytes.rst": {
+    "mtime": 1768887815.3202193,
+    "ast_hash": "5a404f6d2165b61671e57bc28a4e90bd",
+    "semantic_hash": "5a404f6d2165b61671e57bc28a4e90bd"
+  },
+  "c_src/odpi/doc/src/structs/dpiCommonCreateParams.rst": {
+    "mtime": 1768887815.3203378,
+    "ast_hash": "3e6ff7d1ef9ddc384e7508d34c2b025f",
+    "semantic_hash": "3e6ff7d1ef9ddc384e7508d34c2b025f"
+  },
+  "c_src/odpi/doc/src/structs/dpiConnCreateParams.rst": {
+    "mtime": 1768887815.3205726,
+    "ast_hash": "920efa7f30a6011450d2b57c4904619d",
+    "semantic_hash": "920efa7f30a6011450d2b57c4904619d"
+  },
+  "c_src/odpi/doc/src/structs/dpiConnInfo.rst": {
+    "mtime": 1768887815.3206809,
+    "ast_hash": "a432ac408e9a410b607c7d308dc39ac9",
+    "semantic_hash": "a432ac408e9a410b607c7d308dc39ac9"
+  },
+  "c_src/odpi/doc/src/structs/dpiContextCreateParams.rst": {
+    "mtime": 1768887815.3207526,
+    "ast_hash": "647b0fc1e4be03e34664cfc9d67b72a2",
+    "semantic_hash": "647b0fc1e4be03e34664cfc9d67b72a2"
+  },
+  "c_src/odpi/doc/src/structs/dpiData.rst": {
+    "mtime": 1768887815.3208535,
+    "ast_hash": "4111a963d6d363e2148d970ac3e4d54a",
+    "semantic_hash": "4111a963d6d363e2148d970ac3e4d54a"
+  },
+  "c_src/odpi/doc/src/structs/dpiDataTypeInfo.rst": {
+    "mtime": 1768887815.3209767,
+    "ast_hash": "812eb008eafd7db8c5b4c91e95cc15e3",
+    "semantic_hash": "812eb008eafd7db8c5b4c91e95cc15e3"
+  },
+  "c_src/odpi/doc/src/structs/dpiEncodingInfo.rst": {
+    "mtime": 1768887815.3210518,
+    "ast_hash": "7cb7957a5559887b52d77df8825aad4c",
+    "semantic_hash": "7cb7957a5559887b52d77df8825aad4c"
+  },
+  "c_src/odpi/doc/src/structs/dpiErrorInfo.rst": {
+    "mtime": 1768887815.321127,
+    "ast_hash": "0715d4a8dd6cad71ddf75bf73d2446ef",
+    "semantic_hash": "0715d4a8dd6cad71ddf75bf73d2446ef"
+  },
+  "c_src/odpi/doc/src/structs/dpiIntervalDS.rst": {
+    "mtime": 1768887815.3211975,
+    "ast_hash": "b5fd3a2ae1a0cde5f4a9084b0351a66c",
+    "semantic_hash": "b5fd3a2ae1a0cde5f4a9084b0351a66c"
+  },
+  "c_src/odpi/doc/src/structs/dpiIntervalYM.rst": {
+    "mtime": 1768887815.321265,
+    "ast_hash": "71027a0ca5e19158f93e076f954639ac",
+    "semantic_hash": "71027a0ca5e19158f93e076f954639ac"
+  },
+  "c_src/odpi/doc/src/structs/dpiJsonArray.rst": {
+    "mtime": 1768887815.3213403,
+    "ast_hash": "4882e1ba86d7a8e58a5819ee1a380dd0",
+    "semantic_hash": "4882e1ba86d7a8e58a5819ee1a380dd0"
+  },
+  "c_src/odpi/doc/src/structs/dpiJsonNode.rst": {
+    "mtime": 1768887815.321414,
+    "ast_hash": "c8b06bcf95ca82c4461e9fa5b4b1a0b6",
+    "semantic_hash": "c8b06bcf95ca82c4461e9fa5b4b1a0b6"
+  },
+  "c_src/odpi/doc/src/structs/dpiJsonObject.rst": {
+    "mtime": 1768887815.3214898,
+    "ast_hash": "ebfec243c760d8f340ce3e14bb3f0d6c",
+    "semantic_hash": "ebfec243c760d8f340ce3e14bb3f0d6c"
+  },
+  "c_src/odpi/doc/src/structs/dpiMsgRecipient.rst": {
+    "mtime": 1768887815.3215613,
+    "ast_hash": "318752574c6a818c3196aaebb0e4c28d",
+    "semantic_hash": "318752574c6a818c3196aaebb0e4c28d"
+  },
+  "c_src/odpi/doc/src/structs/dpiObjectAttrInfo.rst": {
+    "mtime": 1768887815.3216317,
+    "ast_hash": "f7cac53a4f4a0a9303a3253db7f0b058",
+    "semantic_hash": "f7cac53a4f4a0a9303a3253db7f0b058"
+  },
+  "c_src/odpi/doc/src/structs/dpiObjectTypeInfo.rst": {
+    "mtime": 1768887815.3217046,
+    "ast_hash": "b631fde3b569b5272c8956f0ad925812",
+    "semantic_hash": "b631fde3b569b5272c8956f0ad925812"
+  },
+  "c_src/odpi/doc/src/structs/dpiPoolCreateParams.rst": {
+    "mtime": 1768887815.3218122,
+    "ast_hash": "e45e3d9b52312e4fef6b71f73e0137c9",
+    "semantic_hash": "e45e3d9b52312e4fef6b71f73e0137c9"
+  },
+  "c_src/odpi/doc/src/structs/dpiQueryInfo.rst": {
+    "mtime": 1768887815.3218858,
+    "ast_hash": "ccf161aecc17903982e5b00d37cdaf76",
+    "semantic_hash": "ccf161aecc17903982e5b00d37cdaf76"
+  },
+  "c_src/odpi/doc/src/structs/dpiSessionlessTransactionId.rst": {
+    "mtime": 1768887815.321957,
+    "ast_hash": "537606c31d8dde46f15c461a574210ea",
+    "semantic_hash": "537606c31d8dde46f15c461a574210ea"
+  },
+  "c_src/odpi/doc/src/structs/dpiShardingKeyColumn.rst": {
+    "mtime": 1768887815.3220294,
+    "ast_hash": "10bc89d6b9a02cd1babb7f8b5b8a22b2",
+    "semantic_hash": "10bc89d6b9a02cd1babb7f8b5b8a22b2"
+  },
+  "c_src/odpi/doc/src/structs/dpiSodaOperOptions.rst": {
+    "mtime": 1768887815.322129,
+    "ast_hash": "03edb9f6a019366c609f6f1b60830145",
+    "semantic_hash": "03edb9f6a019366c609f6f1b60830145"
+  },
+  "c_src/odpi/doc/src/structs/dpiStmtInfo.rst": {
+    "mtime": 1768887815.3222003,
+    "ast_hash": "1485889300d026b18228bb720470fd55",
+    "semantic_hash": "1485889300d026b18228bb720470fd55"
+  },
+  "c_src/odpi/doc/src/structs/dpiStringList.rst": {
+    "mtime": 1768887815.3222682,
+    "ast_hash": "e28f803d9879c40f554a4c79ce170710",
+    "semantic_hash": "e28f803d9879c40f554a4c79ce170710"
+  },
+  "c_src/odpi/doc/src/structs/dpiSubscrCreateParams.rst": {
+    "mtime": 1768887815.3223722,
+    "ast_hash": "b21d9bccbb2825b1ec525a5a8b57305d",
+    "semantic_hash": "b21d9bccbb2825b1ec525a5a8b57305d"
+  },
+  "c_src/odpi/doc/src/structs/dpiSubscrMessage.rst": {
+    "mtime": 1768887815.3224807,
+    "ast_hash": "0f93aeb75f805ba536b359f98cac2a86",
+    "semantic_hash": "0f93aeb75f805ba536b359f98cac2a86"
+  },
+  "c_src/odpi/doc/src/structs/dpiSubscrMessageQuery.rst": {
+    "mtime": 1768887815.3225505,
+    "ast_hash": "edb31e1adcf6f29a0b2f3dd7d7c91d11",
+    "semantic_hash": "edb31e1adcf6f29a0b2f3dd7d7c91d11"
+  },
+  "c_src/odpi/doc/src/structs/dpiSubscrMessageRow.rst": {
+    "mtime": 1768887815.322619,
+    "ast_hash": "ea0bc6ca8bdcf47ca04cf07972772ba7",
+    "semantic_hash": "ea0bc6ca8bdcf47ca04cf07972772ba7"
+  },
+  "c_src/odpi/doc/src/structs/dpiSubscrMessageTable.rst": {
+    "mtime": 1768887815.3226933,
+    "ast_hash": "4e08f1767323777bd7d2f07d46650350",
+    "semantic_hash": "4e08f1767323777bd7d2f07d46650350"
+  },
+  "c_src/odpi/doc/src/structs/dpiTimestamp.rst": {
+    "mtime": 1768887815.3227682,
+    "ast_hash": "157baad3e4ef08c150907afce7298b57",
+    "semantic_hash": "157baad3e4ef08c150907afce7298b57"
+  },
+  "c_src/odpi/doc/src/structs/dpiVectorInfo.rst": {
+    "mtime": 1768887815.3228426,
+    "ast_hash": "7e63f2b5fb3795dc98385b55abbac887",
+    "semantic_hash": "7e63f2b5fb3795dc98385b55abbac887"
+  },
+  "c_src/odpi/doc/src/structs/dpiVersionInfo.rst": {
+    "mtime": 1768887815.322916,
+    "ast_hash": "3c0b05e6c06acc5bd48b433f48711e5f",
+    "semantic_hash": "3c0b05e6c06acc5bd48b433f48711e5f"
+  },
+  "c_src/odpi/doc/src/structs/dpiXid.rst": {
+    "mtime": 1768887815.3229866,
+    "ast_hash": "6029adfff8f94e1ce6737427e8b343fb",
+    "semantic_hash": "6029adfff8f94e1ce6737427e8b343fb"
+  },
+  "c_src/odpi/doc/src/structs/index.rst": {
+    "mtime": 1768887815.3230538,
+    "ast_hash": "e497957c20e139475d0175e480b61f0e",
+    "semantic_hash": "e497957c20e139475d0175e480b61f0e"
+  },
+  "c_src/odpi/doc/src/unions/dpiDataBuffer.rst": {
+    "mtime": 1768887815.3232121,
+    "ast_hash": "18547fb481f97f7a37e9558a5a0f07f2",
+    "semantic_hash": "18547fb481f97f7a37e9558a5a0f07f2"
+  },
+  "c_src/odpi/doc/src/unions/dpiVectorDimensionBuffer.rst": {
+    "mtime": 1768887815.323282,
+    "ast_hash": "63c02a0cd73e2816b2e825c6d13eff57",
+    "semantic_hash": "63c02a0cd73e2816b2e825c6d13eff57"
+  },
+  "c_src/odpi/doc/src/unions/index.rst": {
+    "mtime": 1768887815.3233557,
+    "ast_hash": "87674fbf7a1e1301a77f2d86f328d7d7",
+    "semantic_hash": "87674fbf7a1e1301a77f2d86f328d7d7"
+  },
+  "c_src/odpi/doc/src/user_guide/data_types.rst": {
+    "mtime": 1768887815.3234992,
+    "ast_hash": "e4bc9452b1858fbc29916e0f507816e8",
+    "semantic_hash": "e4bc9452b1858fbc29916e0f507816e8"
+  },
+  "c_src/odpi/doc/src/user_guide/debugging.rst": {
+    "mtime": 1768887815.3235805,
+    "ast_hash": "b874b2a4e4425636ef6d5d1b8044da25",
+    "semantic_hash": "b874b2a4e4425636ef6d5d1b8044da25"
+  },
+  "c_src/odpi/doc/src/user_guide/installation.rst": {
+    "mtime": 1768887815.3236825,
+    "ast_hash": "6d29af7fbed450421ce5013f493c0748",
+    "semantic_hash": "6d29af7fbed450421ce5013f493c0748"
+  },
+  "c_src/odpi/doc/src/user_guide/introduction.rst": {
+    "mtime": 1768887815.3237677,
+    "ast_hash": "a3de936d8dfa2ed4afd1b934a0d88d5c",
+    "semantic_hash": "a3de936d8dfa2ed4afd1b934a0d88d5c"
+  },
+  "c_src/odpi/doc/src/user_guide/round_trips.rst": {
+    "mtime": 1768887815.3238764,
+    "ast_hash": "8952e38a0f0ab88d7e636f8df755c075",
+    "semantic_hash": "8952e38a0f0ab88d7e636f8df755c075"
+  },
+  "c_src/odpi/embed/README.md": {
+    "mtime": 1768887815.324007,
+    "ast_hash": "12e45363ca1f88a85d260e6a1e1577c1",
+    "semantic_hash": "12e45363ca1f88a85d260e6a1e1577c1"
+  },
+  "c_src/odpi/samples/README.md": {
+    "mtime": 1768887815.3295841,
+    "ast_hash": "29804d21685053bb4600427a61a94538",
+    "semantic_hash": "29804d21685053bb4600427a61a94538"
+  },
+  "c_src/odpi/test/README.md": {
+    "mtime": 1768887815.3362772,
+    "ast_hash": "d73b6174cdb70ccb9a02fcf34d9ac88c",
+    "semantic_hash": "d73b6174cdb70ccb9a02fcf34d9ac88c"
+  },
+  "c_src/odpi/test/valgrind/suppressions.txt": {
+    "mtime": 1768887815.3419058,
+    "ast_hash": "b46bd5f67b8dde3249ce66f07eeeea9e",
+    "semantic_hash": "b46bd5f67b8dde3249ce66f07eeeea9e"
+  },
+  "docker-compose.yaml": {
+    "mtime": 1768718242.017324,
+    "ast_hash": "92144a04f240126f34d23491799a330a",
+    "semantic_hash": "92144a04f240126f34d23491799a330a"
+  }
+}
