@@ -196,6 +196,11 @@ Tests tagged `:oracle_database` are excluded by default. To run them:
 ORACLE_DATABASE_AVAILABLE=1 mix test
 ```
 
+The test harness (`test/test_helper.exs`) pins `NLS_LANG` to `AMERICAN_AMERICA.AL32UTF8`
+before the first ODPI-C context is created, so Oracle error messages come back in US English
+and assertions on message text stay stable regardless of the developer/CI locale. A meaningful
+explicit `NLS_LANG` is respected (unset or blank falls through to the default).
+
 ---
 
 ## Constraints & Preferences
@@ -230,3 +235,13 @@ When running multi-line scripts or code snippets:
 - Execute the file directly (e.g., `mix run tmp/test_boolean_encoding.exs`)
 - Do NOT auto-delete tmp files — leave them for debugging
 - Always use `--no-recurse-submodules` when doing `git push` to origin
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
