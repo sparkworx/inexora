@@ -22,7 +22,7 @@ defmodule Inexora.NifTest do
           assert is_reference(ctx)
           assert Nif.context_destroy(ctx) == :ok
 
-        {:error, {code, fn_name, message}} ->
+        {:error, %{code: code, fn_name: fn_name, message: message}} ->
           # Expected error when Oracle Instant Client is not installed
           assert is_integer(code)
           assert is_binary(fn_name) or is_list(fn_name)
@@ -39,7 +39,7 @@ defmodule Inexora.NifTest do
           assert is_reference(ctx)
           assert Nif.context_destroy(ctx) == :ok
 
-        {:error, {code, fn_name, message}} ->
+        {:error, %{code: code, fn_name: fn_name, message: message}} ->
           # Expected error when Oracle Instant Client is not installed
           assert is_integer(code)
           assert is_binary(fn_name) or is_list(fn_name)
@@ -54,7 +54,7 @@ defmodule Inexora.NifTest do
           assert is_reference(ctx)
           assert Nif.context_destroy(ctx) == :ok
 
-        {:error, {code, fn_name, message}} ->
+        {:error, %{code: code, fn_name: fn_name, message: message}} ->
           # Expected error when Oracle Instant Client is not installed
           assert is_integer(code)
           assert is_binary(fn_name) or is_list(fn_name)
@@ -76,7 +76,7 @@ defmodule Inexora.NifTest do
           assert is_reference(ctx)
           Nif.context_destroy(ctx)
 
-        {:error, {code, _fn_name, _message}} ->
+        {:error, %{code: code}} ->
           # Error is expected (invalid paths or no Oracle client)
           assert is_integer(code)
       end
@@ -103,7 +103,7 @@ defmodule Inexora.NifTest do
           assert is_reference(ctx)
           Nif.context_destroy(ctx)
 
-        {:error, {code, _fn_name, _message}} ->
+        {:error, %{code: code}} ->
           # Error from Oracle client, not from option parsing
           assert is_integer(code)
       end

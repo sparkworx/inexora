@@ -1,0 +1,7 @@
+# Machine-specific graphify internals (absolute paths — not portable)
+.graphify_python
+.graphify_root
+.needs_update
+
+# Regenerable, version-pinned extraction cache (172+ files) — not source of truth
+cache/

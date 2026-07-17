@@ -159,7 +159,7 @@ defmodule Inexora.Connection do
         {:ok, %{query | statement: stmt, sql: sql_binary}, state}
 
       {:error, reason} ->
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
@@ -179,7 +179,8 @@ defmodule Inexora.Connection do
     execute_with_returning(query, params, state)
   end
 
-  def handle_execute(%Query{statement: stmt, sql: sql} = query, params, _opts, state) when is_reference(stmt) do
+  def handle_execute(%Query{statement: stmt, sql: sql} = query, params, _opts, state)
+      when is_reference(stmt) do
     with :ok <- bind_params(stmt, params),
          {:ok, num_columns} <- Nif.stmt_execute(stmt) do
       if num_columns > 0 do
@@ -191,7 +192,7 @@ defmodule Inexora.Connection do
       end
     else
       {:error, reason} ->
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
@@ -247,14 +248,15 @@ defmodule Inexora.Connection do
           done: false
         }
 
-        {:ok, %{query | statement: stmt, num_columns: num_columns, columns: columns}, cursor, state}
+        {:ok, %{query | statement: stmt, num_columns: num_columns, columns: columns}, cursor,
+         state}
       else
         Nif.stmt_close(stmt)
         {:error, Error.from_odpi("not a query - no columns returned"), state}
       end
     else
       {:error, reason} ->
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
@@ -263,7 +265,12 @@ defmodule Inexora.Connection do
     {:halt, [], cursor, state}
   end
 
-  def handle_fetch(_query, %{stmt: stmt, num_columns: num_columns, columns: columns, max_rows: max_rows} = cursor, _opts, state) do
+  def handle_fetch(
+        _query,
+        %{stmt: stmt, num_columns: num_columns, columns: columns, max_rows: max_rows} = cursor,
+        _opts,
+        state
+      ) do
     case Nif.stmt_fetch_rows(stmt, max_rows) do
       {:ok, {0, _buffer_idx, _more}} ->
         {:halt, [], %{cursor | done: true}, state}
@@ -279,7 +286,7 @@ defmodule Inexora.Connection do
         end
 
       {:error, reason} ->
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
@@ -291,6 +298,39 @@ defmodule Inexora.Connection do
 
   def handle_deallocate(_query, _cursor, _opts, state) do
     {:ok, nil, state}
+  end
+
+  # Map an ODPI-C failure on a query/execute path to the right DBConnection reply.
+  #
+  # A plain SQL error (unique violation, bad column, ...) must keep the pooled
+  # connection. We only escalate to {:disconnect, ...} when the connection is
+  # actually unusable. ODPI-C's `recoverable` flag is authoritative ONLY on
+  # Oracle 12.1+ (it is `false` on older client/server), so we never treat
+  # `recoverable: false` alone as fatal -- we confirm with a local, no-round-trip
+  # health check before tearing the connection down.
+  defp execute_disposition(reason, %__MODULE__{conn: conn} = state) do
+    error = Error.from_odpi(reason)
+
+    cond do
+      error.recoverable == true ->
+        # Oracle explicitly reports the session survived -> keep it.
+        {:error, error, state}
+
+      connection_dead?(conn) ->
+        {:disconnect, error, state}
+
+      true ->
+        {:error, error, state}
+    end
+  end
+
+  # Local health check (no server round-trip). Treats an errored probe as dead so
+  # a connection we can no longer even query is removed from the pool.
+  defp connection_dead?(conn) do
+    case Nif.conn_get_is_healthy(conn) do
+      {:ok, healthy} -> not healthy
+      {:error, _} -> true
+    end
   end
 
   defp configure_cursor(stmt, opts) do
@@ -385,7 +425,7 @@ defmodule Inexora.Connection do
         {:ok, %Query{statement: stmt, sql: sql}, result, state}
 
       {:error, reason} ->
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
@@ -427,17 +467,17 @@ defmodule Inexora.Connection do
 
               {:error, reason} ->
                 cleanup_variables(input_vars ++ output_vars)
-                {:error, Error.from_odpi(reason), state}
+                execute_disposition(reason, state)
             end
 
           {:error, reason} ->
             cleanup_variables(input_vars ++ output_vars)
-            {:error, Error.from_odpi(reason), state}
+            execute_disposition(reason, state)
         end
 
       {:error, reason} ->
         cleanup_variables(input_vars)
-        {:error, Error.from_odpi(reason), state}
+        execute_disposition(reason, state)
     end
   end
 
