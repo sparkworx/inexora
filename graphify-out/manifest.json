@@ -10,9 +10,9 @@
     "semantic_hash": "5929c731d5bca5967e0fb415b7fa9a01"
   },
   "c_src/inexora_nif.c": {
-    "mtime": 1771108147.008666,
-    "ast_hash": "9734ab607791032644f87788a0497f94",
-    "semantic_hash": "9734ab607791032644f87788a0497f94"
+    "mtime": 1784310259.6298182,
+    "ast_hash": "200e3fb129d7187e57d55721874d6f9b",
+    "semantic_hash": "200e3fb129d7187e57d55721874d6f9b"
   },
   "c_src/odpi/doc/src/_ext/parameters_table.py": {
     "mtime": 1768887815.312773,
@@ -695,9 +695,9 @@
     "semantic_hash": "3b460526afacd6ce5cb9b562291c869b"
   },
   "lib/inexora/connection.ex": {
-    "mtime": 1771108161.6195598,
-    "ast_hash": "d5a24722ae1368b9b6825eb260927c0b",
-    "semantic_hash": "d5a24722ae1368b9b6825eb260927c0b"
+    "mtime": 1784310259.6376445,
+    "ast_hash": "3df9ee9e445056c3fa7b3b28a5220f65",
+    "semantic_hash": "3df9ee9e445056c3fa7b3b28a5220f65"
   },
   "lib/inexora/cursor.ex": {
     "mtime": 1768694469.0,
@@ -705,14 +705,14 @@
     "semantic_hash": "2cf9f81c668e09500d96097b92af96de"
   },
   "lib/inexora/error.ex": {
-    "mtime": 1768615997.9440017,
-    "ast_hash": "bef50f47acb5f4030b14400323deaa81",
-    "semantic_hash": "bef50f47acb5f4030b14400323deaa81"
+    "mtime": 1784310259.6377714,
+    "ast_hash": "dbc31686349238bf876df2c829828e84",
+    "semantic_hash": "dbc31686349238bf876df2c829828e84"
   },
   "lib/inexora/nif.ex": {
-    "mtime": 1768689070.4311917,
-    "ast_hash": "8ffd799b83df769b9d0ef0f7d911842b",
-    "semantic_hash": "8ffd799b83df769b9d0ef0f7d911842b"
+    "mtime": 1784310259.6379004,
+    "ast_hash": "45ad532b216a453148280c6813ff69cc",
+    "semantic_hash": "45ad532b216a453148280c6813ff69cc"
   },
   "lib/inexora/query.ex": {
     "mtime": 1768694256.726589,
@@ -765,9 +765,9 @@
     "semantic_hash": "603e8f9ab728404513e4dbec8f53c50b"
   },
   "test/inexora/error_test.exs": {
-    "mtime": 1768615997.945925,
-    "ast_hash": "a967c2fcf9c9812e7491108f0bff8f51",
-    "semantic_hash": "a967c2fcf9c9812e7491108f0bff8f51"
+    "mtime": 1784310259.6380975,
+    "ast_hash": "9bb5c1fe31dc669c25015e28dd5e4402",
+    "semantic_hash": "9bb5c1fe31dc669c25015e28dd5e4402"
   },
   "test/inexora/float_type_test.exs": {
     "mtime": 1768615997.9460342,
@@ -785,14 +785,14 @@
     "semantic_hash": "783b320d2840a60026d2804271a21a81"
   },
   "test/inexora/nif_connection_test.exs": {
-    "mtime": 1768615997.9463913,
-    "ast_hash": "daf75ae3a30502113b1fdb7aec1d4e2a",
-    "semantic_hash": "daf75ae3a30502113b1fdb7aec1d4e2a"
+    "mtime": 1784310259.6382344,
+    "ast_hash": "4e5cc2e0b49aba300efe02285b919b87",
+    "semantic_hash": "4e5cc2e0b49aba300efe02285b919b87"
   },
   "test/inexora/nif_test.exs": {
-    "mtime": 1768689070.4314017,
-    "ast_hash": "b08f1fb3b93508a72a240d90c7943dbd",
-    "semantic_hash": "b08f1fb3b93508a72a240d90c7943dbd"
+    "mtime": 1784310259.638381,
+    "ast_hash": "07c4adfe0208cd0ceda87310ccfe56fd",
+    "semantic_hash": "07c4adfe0208cd0ceda87310ccfe56fd"
   },
   "test/inexora/query_execution_test.exs": {
     "mtime": 1768615997.9466095,
@@ -855,9 +855,9 @@
     "semantic_hash": "82f1906d9debd5e3cbda20aadffd62d6"
   },
   "test/test_helper.exs": {
-    "mtime": 1768953615.024473,
-    "ast_hash": "f54174d21ef69a642c49fcfa5f02924b",
-    "semantic_hash": "f54174d21ef69a642c49fcfa5f02924b"
+    "mtime": 1784310259.638678,
+    "ast_hash": "4602812f47bbfa3e708283484a1d201e",
+    "semantic_hash": "4602812f47bbfa3e708283484a1d201e"
   },
   "2026-01-15-what-are-we-trying-to-accomplish.txt": {
     "mtime": 1768615997.9417186,
@@ -870,9 +870,9 @@
     "semantic_hash": "4665fa5386433ac7b3ba5013ec8bfcab"
   },
   "CLAUDE.md": {
-    "mtime": 1768874328.306848,
-    "ast_hash": "bd6a962ccce2509f0ec623bf20e579d8",
-    "semantic_hash": "bd6a962ccce2509f0ec623bf20e579d8"
+    "mtime": 1784310259.6295893,
+    "ast_hash": "b0579d6a1a7017173ba32aeb261fc475",
+    "semantic_hash": "b0579d6a1a7017173ba32aeb261fc475"
   },
   "README.md": {
     "mtime": 1768874328.3071241,
@@ -1513,5 +1513,55 @@
     "mtime": 1768718242.017324,
     "ast_hash": "92144a04f240126f34d23491799a330a",
     "semantic_hash": "92144a04f240126f34d23491799a330a"
+  },
+  ".claude/settings.json": {
+    "mtime": 1784237902.8954332,
+    "ast_hash": "1ccc3857dec583f1134f7a0dd6c64a08",
+    "semantic_hash": "1ccc3857dec583f1134f7a0dd6c64a08"
+  },
+  "CONTEXT.md": {
+    "mtime": 1784311730.9265866,
+    "ast_hash": "62e4313ceeecd2602ca828bbfb80f8d9",
+    "semantic_hash": "62e4313ceeecd2602ca828bbfb80f8d9"
+  },
+  "docs/adapter-split-plan.md": {
+    "mtime": 1784314695.0475047,
+    "ast_hash": "5a439a6290c3e418dd4625bd1f2dd7df",
+    "semantic_hash": "5a439a6290c3e418dd4625bd1f2dd7df"
+  },
+  "docs/adr/0001-type-owns-all-per-type-facts.md": {
+    "mtime": 1784311781.1288424,
+    "ast_hash": "0a24fee0a3c1573d5746f14c871e05c9",
+    "semantic_hash": "0a24fee0a3c1573d5746f14c871e05c9"
+  },
+  "docs/adr/0002-split-ecto-adapter-into-ecto-oracle.md": {
+    "mtime": 1784314673.0627115,
+    "ast_hash": "70fe0c0cd2876b28d306d429c280e24a",
+    "semantic_hash": "70fe0c0cd2876b28d306d429c280e24a"
+  },
+  "docs/agents/domain.md": {
+    "mtime": 1784310259.6300094,
+    "ast_hash": "3e837ff18645a937c1f53260d27b6c6f",
+    "semantic_hash": "3e837ff18645a937c1f53260d27b6c6f"
+  },
+  "docs/agents/issue-tracker.md": {
+    "mtime": 1784310259.6301172,
+    "ast_hash": "3cd8509285524d31a33279b8cb0870e5",
+    "semantic_hash": "3cd8509285524d31a33279b8cb0870e5"
+  },
+  "docs/agents/triage-labels.md": {
+    "mtime": 1784310259.6302176,
+    "ast_hash": "22add54cb98451c55b20e6b7992d4a85",
+    "semantic_hash": "22add54cb98451c55b20e6b7992d4a85"
+  },
+  "graphify-out/memory/query_20260625_015309_why_does_dpigen__endpublicfn___bridge_26_of_the_10.md": {
+    "mtime": 1784310259.637382,
+    "ast_hash": "5e2e5beb7ea837343f01102c2081ad1a",
+    "semantic_hash": "5e2e5beb7ea837343f01102c2081ad1a"
+  },
+  "graphify-out/memory/query_20260625_020622_how_does_a_c_layer_dpierror_surface_into_the_elixi.md": {
+    "mtime": 1784310259.637473,
+    "ast_hash": "d173ad3edb496db48b0b248de8ee2adf",
+    "semantic_hash": "d173ad3edb496db48b0b248de8ee2adf"
   }
 }
