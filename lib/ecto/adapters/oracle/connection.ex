@@ -23,7 +23,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
   def prepare_execute(conn, _name, sql, params, opts) do
     sql_binary = IO.iodata_to_binary(sql)
     returning = parse_returning_into(sql_binary)
-    query = %Inexora.Query{sql: sql_binary, statement: nil, returning: returning}
+    query = Inexora.Query.new(sql_binary, returning)
     DBConnection.prepare_execute(conn, query, params, opts)
   end
 
@@ -88,7 +88,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
   def query(conn, sql, params, opts) do
     sql_binary = IO.iodata_to_binary(sql)
     returning = parse_returning_into(sql_binary)
-    query = %Inexora.Query{sql: sql_binary, statement: nil, returning: returning}
+    query = Inexora.Query.new(sql_binary, returning)
 
     case DBConnection.prepare_execute(conn, query, params, opts) do
       {:ok, _query, result} -> {:ok, result}
@@ -103,7 +103,7 @@ defmodule Ecto.Adapters.Oracle.Connection do
 
   @impl true
   def stream(conn, sql, params, opts) do
-    query = %Inexora.Query{sql: sql, statement: nil}
+    query = Inexora.Query.new(IO.iodata_to_binary(sql))
     # Use DBConnection.stream for cursor-based streaming
     DBConnection.stream(conn, query, params, opts)
   end

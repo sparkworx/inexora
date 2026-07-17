@@ -7,6 +7,12 @@ defmodule Inexora.Result do
     * `:columns` - List of column names (for SELECT queries)
     * `:rows` - List of rows, where each row is a list of values
     * `:num_rows` - Number of rows returned (SELECT) or affected (DML)
+
+  ## Public interface (frozen contract)
+
+  `%Inexora.Result{}` — including the `columns`, `rows`, and `num_rows` fields
+  above — is part of the frozen driver interface the `ecto_oracle` adapter
+  reads. See `docs/adapter-split-plan.md` for the full driver interface.
   """
 
   defstruct [:columns, :rows, :num_rows]

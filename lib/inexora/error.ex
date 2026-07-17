@@ -24,6 +24,14 @@ defmodule Inexora.Error do
   > client and server are release 12.1 or higher; it is reported `false`
   > otherwise. Treat `recoverable: false` as "unknown", not as proof that the
   > connection is dead.
+
+  ## Public interface (frozen contract)
+
+  `%Inexora.Error{}` is the sole error shape the `ecto_oracle` adapter reads.
+  The frozen contract is the `oracle_code` and `message` fields (the adapter
+  keys constraint mapping off `oracle_code` in its `to_constraints`); the
+  remaining `dpiErrorInfo` fields are additional detail, not part of the
+  contract. See `docs/adapter-split-plan.md` for the full driver interface.
   """
 
   defexception [
