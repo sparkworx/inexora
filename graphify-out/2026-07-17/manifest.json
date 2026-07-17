@@ -680,9 +680,9 @@
     "semantic_hash": "d6913ac51a4601e5726546379781d236"
   },
   "lib/ecto/adapters/oracle/connection.ex": {
-    "mtime": 1784332628.2876947,
-    "ast_hash": "8bc39883da8fce1a2c9df121367722d1",
-    "semantic_hash": ""
+    "mtime": 1768695370.7907522,
+    "ast_hash": "dd403baae62efe19441b58130769bc37",
+    "semantic_hash": "dd403baae62efe19441b58130769bc37"
   },
   "lib/inexora.ex": {
     "mtime": 1768615997.943434,
@@ -695,9 +695,9 @@
     "semantic_hash": "3b460526afacd6ce5cb9b562291c869b"
   },
   "lib/inexora/connection.ex": {
-    "mtime": 1784332660.7771957,
-    "ast_hash": "ee4c864aa2df1936d1f0374a046188f4",
-    "semantic_hash": ""
+    "mtime": 1784310259.6376445,
+    "ast_hash": "3df9ee9e445056c3fa7b3b28a5220f65",
+    "semantic_hash": "3df9ee9e445056c3fa7b3b28a5220f65"
   },
   "lib/inexora/cursor.ex": {
     "mtime": 1768694469.0,
@@ -705,9 +705,9 @@
     "semantic_hash": "2cf9f81c668e09500d96097b92af96de"
   },
   "lib/inexora/error.ex": {
-    "mtime": 1784332679.7176046,
-    "ast_hash": "fa6bdf74fcd2eec87497c3010fa03aed",
-    "semantic_hash": ""
+    "mtime": 1784310259.6377714,
+    "ast_hash": "dbc31686349238bf876df2c829828e84",
+    "semantic_hash": "dbc31686349238bf876df2c829828e84"
   },
   "lib/inexora/nif.ex": {
     "mtime": 1784310259.6379004,
@@ -715,14 +715,14 @@
     "semantic_hash": "45ad532b216a453148280c6813ff69cc"
   },
   "lib/inexora/query.ex": {
-    "mtime": 1784332585.1008902,
-    "ast_hash": "3805fa1f7655790cb0c884796552d5b0",
-    "semantic_hash": ""
+    "mtime": 1768694256.726589,
+    "ast_hash": "503992073244db23eb621f152ca60d30",
+    "semantic_hash": "503992073244db23eb621f152ca60d30"
   },
   "lib/inexora/result.ex": {
-    "mtime": 1784332686.8577666,
-    "ast_hash": "e20d7e508ea0e49911ce0bed15974534",
-    "semantic_hash": ""
+    "mtime": 1768694267.9655833,
+    "ast_hash": "18cf1f64e0e47f541029dfc01750d317",
+    "semantic_hash": "18cf1f64e0e47f541029dfc01750d317"
   },
   "lib/inexora/type.ex": {
     "mtime": 1768615997.9444432,
