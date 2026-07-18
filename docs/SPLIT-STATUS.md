@@ -119,6 +119,24 @@ Because `ecto_oracle` needs an adapter-free driver, **Phase 3 (inexora 0.3.0)
 must publish before `ecto_oracle` can** — the reverse of the original plan's
 ordering.
 
+## Local development — path dep convention
+
+Until `inexora` is on Hex, `ecto_oracle` cannot resolve `{:inexora, "~> 0.3.0"}`.
+For side-by-side local development (the two repos as siblings), `ecto_oracle`'s
+`mix.exs` therefore currently pins the driver by path:
+
+```elixir
+{:inexora, path: "../inexora"}
+```
+
+This resolves against the adapter-free `../inexora` (develop) with no module
+collision. **Restore `{:inexora, "~> 0.3.0"}` before `mix hex.publish`** —
+`hex.publish` rejects path deps. The mix.exs comment carries the same reminder.
+
+> Note: this path-dep state is committed on `ecto_oracle`'s `develop`, which
+> means its history diverged from what was first pushed to GitHub — the next
+> push needs `git push --force-with-lease origin develop`.
+
 ## Trigger order (what's left — Hex publishing only)
 
 Done: Phase 1 extraction, the `../ecto_oracle` package (Phase 2, pushed to
@@ -133,5 +151,6 @@ Remaining steps are all outward-facing Hex/push work:
    (`git push --no-recurse-submodules origin develop v0.3.0`), then
    `mix hex.publish` → `inexora` 0.3.0 on Hex.
 4. **Publish the adapter:** once `inexora` 0.3.0 is on Hex, in `../ecto_oracle`
-   run `mix deps.get` (resolves the `~> 0.3.0` pin), `mix test`, `mix hex.publish`
-   → `ecto_oracle` 0.3.0.
+   first **swap the path dep back to `{:inexora, "~> 0.3.0"}`** (see Local
+   development above), then `mix deps.get` (resolves the pin), `mix test`,
+   `mix hex.publish` → `ecto_oracle` 0.3.0.
