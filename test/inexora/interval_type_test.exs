@@ -219,25 +219,4 @@ defmodule Inexora.IntervalTypeTest do
       assert [[{:interval_ym, 0, 0}]] = result.rows
     end
   end
-
-  describe "INTERVAL types in Ecto DDL" do
-    test "generates correct DDL for interval types" do
-      alias Ecto.Adapters.Oracle.Connection, as: SQL
-
-      columns = [
-        {:add, :id, :bigserial, [primary_key: true]},
-        {:add, :duration, :interval_day_to_second, []},
-        {:add, :period, :interval_year_to_month, []}
-      ]
-
-      table = %Ecto.Migration.Table{name: "interval_ddl_test"}
-      [ddl] = SQL.execute_ddl({:create, table, columns})
-      result = IO.iodata_to_binary(ddl)
-
-      assert result =~ "CREATE TABLE"
-      assert result =~ ~s("INTERVAL_DDL_TEST")
-      assert result =~ "INTERVAL DAY TO SECOND"
-      assert result =~ "INTERVAL YEAR TO MONTH"
-    end
-  end
 end

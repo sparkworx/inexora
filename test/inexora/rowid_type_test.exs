@@ -137,25 +137,4 @@ defmodule Inexora.RowidTypeTest do
       assert name == "Alice"
     end
   end
-
-  describe "ROWID in Ecto DDL" do
-    test "generates correct DDL for ROWID types" do
-      alias Ecto.Adapters.Oracle.Connection, as: SQL
-
-      columns = [
-        {:add, :id, :bigserial, [primary_key: true]},
-        {:add, :row_ref, :rowid, []},
-        {:add, :universal_row_ref, :urowid, []}
-      ]
-
-      table = %Ecto.Migration.Table{name: "rowid_ddl_test"}
-      [ddl] = SQL.execute_ddl({:create, table, columns})
-      result = IO.iodata_to_binary(ddl)
-
-      assert result =~ "CREATE TABLE"
-      assert result =~ ~s("ROWID_DDL_TEST")
-      assert result =~ "ROWID"
-      assert result =~ "UROWID"
-    end
-  end
 end

@@ -23,8 +23,8 @@ defmodule Inexora.ReturningTest do
   alias Inexora.Query
 
   describe "RETURNING clause SQL generation" do
-    # These tests verify SQL generation works correctly via the Ecto adapter.
-    # See test/ecto/adapters/oracle_test.exs for comprehensive SQL generation tests.
+    # These tests verify the driver executes RETURNING SQL correctly.
+    # Comprehensive Ecto SQL-generation tests live in the ecto_oracle package.
 
     @tag :oracle_database
     test "RETURNING clause parses without error" do

@@ -4,7 +4,9 @@
 
 **Project Name**: inexora
 
-**Purpose**: An Oracle Database driver and Ecto adapter for Elixir applications.
+**Purpose**: An Oracle Database driver for Elixir applications. The Ecto adapter
+lives in the companion [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle)
+repo, which depends on this driver (see [ADR-0002](docs/adr/0002-split-ecto-adapter-into-ecto-oracle.md)).
 
 **Target Users**: Any Elixir developer that uses Oracle Databases with `Ecto`.
 
@@ -148,16 +150,16 @@
 - [datatype] INTERVAL YEAR TO MONTH → `{:interval_ym, years, months}`
 - [datatype] ROWID/UROWID → binary (String) - use `CHARTOROWID(:1)` for binding
 - [datatype] NULL handling
-- [ecto] Ecto adapter (`Ecto.Adapters.Oracle`)
-- [ecto] SQL query generation (SELECT, INSERT, UPDATE, DELETE)
-- [ecto] DDL generation (CREATE TABLE, DROP TABLE, ALTER TABLE, indexes, constraints)
-- [ecto] Integration tests with Ecto Repo
-- [ecto] Bulk insert via `insert_all` using Oracle's `INSERT ALL` syntax
-- [ecto] High-level batch operations via `Inexora.Batch` module
+- [core] High-level batch operations via `Inexora.Batch` module (driver-level bulk binding)
 - [core] Cursor/streaming support for large result sets (`Inexora.Cursor`, DBConnection cursor callbacks)
 - [core] Cursor NIF functions (`stmt_fetch_rows`, `stmt_set_fetch_array_size`, `stmt_set_prefetch_rows`)
 - [core] Auto-incrementing ID columns (Oracle IDENTITY) for test tables
-- [ecto] RETURNING INTO support for Ecto autogenerate (single-row inserts)
+
+> **Ecto adapter moved.** `Ecto.Adapters.Oracle` (SQL/DDL generation, `insert_all`,
+> Ecto Repo integration tests, autogenerate RETURNING wiring) now lives in the
+> separate [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) repo. The
+> driver still provides the RETURNING INTO primitives (`var_get_returned_data`)
+> the adapter builds on.
 
 **In Progress**:
 - None
@@ -165,9 +167,9 @@
 **TODO/Upcoming**:
 - [datatype] Native BOOLEAN type (Oracle 23c+) - requires newer Oracle client driver
 - [datatype] JSON/JSON_OBJECT/JSON_ARRAY types (Oracle 21c+)
-- [ecto] Implement Ecto migrations (runtime testing)
-- [ecto] Batch insert_all with RETURNING (requires special adapter handling)
-- [ecto] insert_all with nil values (Oracle UNION ALL requires type consistency)
+
+> Ecto-adapter TODOs (migrations, `insert_all` with RETURNING, `insert_all` with
+> nil values) now live in the [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) repo.
 
 ---
 
