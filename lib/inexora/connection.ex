@@ -23,6 +23,19 @@ defmodule Inexora.Connection do
         password: "tiger",
         database: "localhost:1521/ORCLPDB1"
       )
+
+  ## Public interface (frozen contract)
+
+  This module is `inexora`'s `DBConnection` entry point and is part of the
+  frozen driver interface the `ecto_oracle` adapter depends on. Beyond the
+  pooled `DBConnection` behaviour, two callbacks double as **public** storage
+  entry points, invoked directly (outside the pool) by the adapter's Ecto
+  `storage_up`/`storage_down`:
+
+    * `connect/1` — open a standalone connection from connect options
+    * `disconnect/2` — tear that connection down
+
+  See `docs/adapter-split-plan.md` for the full frozen driver interface.
   """
 
   use DBConnection
@@ -49,6 +62,13 @@ defmodule Inexora.Connection do
   # DBConnection Callbacks
   # ============================================================
 
+  @doc """
+  Opens a standalone Oracle connection from connect options.
+
+  Public storage-callback entry point: the `ecto_oracle` adapter calls this
+  directly (outside the pool) for `storage_up`/`storage_down`. Part of the
+  frozen driver interface — see the module doc and `docs/adapter-split-plan.md`.
+  """
   @impl DBConnection
   def connect(opts) do
     username = opts |> Keyword.get(:username, "") |> to_string()
@@ -68,6 +88,12 @@ defmodule Inexora.Connection do
     end
   end
 
+  @doc """
+  Tears down a connection opened via `connect/1`.
+
+  Public storage-callback entry point paired with `connect/1` for the adapter's
+  `storage_up`/`storage_down`. Part of the frozen driver interface.
+  """
   @impl DBConnection
   def disconnect(_error, %__MODULE__{conn: conn, context: context} = _state) do
     # Close connection first, then destroy context
