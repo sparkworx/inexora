@@ -9,5 +9,5 @@ The Ecto adapter currently bundled under `lib/ecto/` will move to its own GitHub
 ## Consequences
 
 - The adapter repo duplicates `inexora`'s live-Oracle test harness (docker-compose + `ORACLE_DATABASE_AVAILABLE`); the Postgrex/MyXQL/Tds precedent shows test infra is duplicated per-repo, not shared.
-- Pre-1.0, the adapter pins to the driver's minor (tight lockstep); this relaxes to `~> 1.0` once `inexora`'s public interface is declared stable.
+- Pre-1.0, the adapter pins to the driver's minor (tight lockstep); this relaxes to `~> 1.0` once `inexora`'s public interface is declared stable. **Correction (Phase 2):** the first pairing is `ecto_oracle` 0.3.0 → `{:inexora, "~> 0.3.0"}`, not 0.2.0 — `inexora` 0.2.0 still bundles `Ecto.Adapters.Oracle` and would collide on the module name. See [SPLIT-STATUS.md](../SPLIT-STATUS.md).
 - The driver's public interface is now a frozen contract (see the plan): `%Inexora.Query{}` via `Inexora.Query.new/2`, `%Inexora.Result{}`, `%Inexora.Error{}`, `DBConnection` via `Inexora.Connection`, and `connect/1`+`disconnect/2` for storage callbacks. `Nif`, `Batch`, `Cursor`, `Type` internals, and the C layer stay private (ADR-0001 keeps value-type knowledge driver-side).

@@ -12,13 +12,31 @@ _Last updated: 2026-07-17._
 | Phase | What | Status | Where |
 |-------|------|--------|-------|
 | 0 | Freeze the driver's public interface | ✅ **done, merged to `develop`, tagged `v0.2.0`** | commits `fd80db0`, `6ba64e6`; release prep `0fa6bf6`, `df52473` |
-| 1 | `git filter-repo` extraction spec | ✅ **dry-run validated** (71→14 commits, blame preserved) | spec below |
-| 2 | Stand up the `ecto_oracle` package | ✅ **drafted** (files ready to drop in) | [`ecto_oracle-staging/`](ecto_oracle-staging/) |
+| 1 | `git filter-repo` extraction | ✅ **executed locally** (71→14 commits, blame preserved) | ran into `../ecto_oracle` |
+| 2 | Stand up the `ecto_oracle` package | ✅ **implemented & verified locally** (29 non-DB tests pass) | repo at `../ecto_oracle` (local only, no remote) |
 | 3 | Remove the bundled adapter from `inexora` | ✅ **drafted, NOT merged** (breaking; gated on ecto_oracle publish) | branch `phase3-remove-adapter` |
 
-Nothing outward-facing has happened yet: `v0.2.0` is **not** pushed or published,
-the `ecto_oracle` repo does **not** exist, and `phase3-remove-adapter` is **not**
-merged. All remaining steps are manual/outward-facing (below).
+`../ecto_oracle` is a real local git repo (14 extracted commits + 1 scaffolding
+commit `1b60ed8`), but **nothing outward-facing has happened**: `v0.2.0` is not
+pushed or published, `../ecto_oracle` has **no remote** and is unpushed, and
+`phase3-remove-adapter` is not merged. The staged
+[`ecto_oracle-staging/`](ecto_oracle-staging/) is now **superseded** by
+`../ecto_oracle` — keep it as the only in-`inexora` backup until `ecto_oracle`
+is pushed to GitHub, then delete it.
+
+## Correction — the 0.2.0 pairing collides
+
+Implementing Phase 2 surfaced a flaw in the original lockstep note: `ecto_oracle`
+**cannot** depend on `inexora` 0.2.0. Both define `Ecto.Adapters.Oracle` (0.2.0
+still bundles the adapter), so co-installing them is a module-redefinition
+collision. The first adapter-free driver is **0.3.0**, so:
+
+- `ecto_oracle`'s first release is **0.3.0**, pinning `{:inexora, "~> 0.3.0"}`
+  (there is no `ecto_oracle` 0.2.0).
+- `inexora` 0.2.0 is an **internal interface-freeze milestone only** — not an
+  `ecto_oracle` dependency target.
+- Verified: `ecto_oracle` compiles with no collision and 29 non-DB tests pass
+  against a driver-only `inexora` (path dep to the `phase3-remove-adapter` state).
 
 ## The frozen driver interface (shipped in 0.2.0)
 
@@ -64,8 +82,11 @@ from `inexora` once the real repo is stood up.**
 - `PHASE2-NOTES.md` — manifest, the 3 required fixups to the extracted
   integration test, and build/verify steps
 
-Still needed by hand: copy `inexora`'s `LICENSE` verbatim; fill the
-`<SOURCE_COMMIT>` back-pointer in `README.md`.
+These were the pre-implementation drafts. The real `../ecto_oracle` repo already
+incorporates them **plus** the finished work the drafts left open: `LICENSE`
+copied, `README` `<SOURCE_COMMIT>` filled (`2c53741`), the 3 integration-test
+fixups applied, and the `~> 0.3.0` pin / 0.3.0 version. Prefer `../ecto_oracle`;
+this staging dir is a backup only.
 
 ## Phase 3 — the driver cleanup (branch `phase3-remove-adapter`)
 
@@ -79,25 +100,34 @@ Drafted and verified (70 non-DB tests pass, compiles/formats clean), **held off
 
 ## Versioning / lockstep
 
-Pre-1.0, the adapter pins the driver's **minor** in tight lockstep:
+Pre-1.0, the adapter pins the driver's **minor** in tight lockstep — but the
+first pairing is **0.3.0**, not 0.2.0 (see the collision correction above):
 
-- `ecto_oracle` 0.2.0 pins `{:inexora, "~> 0.2.0"}` (correct while `inexora` 0.2.0
-  still bundles the adapter).
-- When `inexora` 0.3.0 lands (Phase 3), `~> 0.2.0` **excludes** it — so
-  `ecto_oracle` must ship a matching **0.3.0** re-pinned `{:inexora, "~> 0.3.0"}`.
+- `inexora` 0.2.0 — interface-freeze milestone, still bundles the adapter.
+  Optional to publish (for existing bundled-adapter users); **not** an
+  `ecto_oracle` dependency target.
+- `inexora` 0.3.0 (Phase 3) — first adapter-free driver.
+- `ecto_oracle` 0.3.0 — first release, pins `{:inexora, "~> 0.3.0"}`.
 - At `inexora` 1.0 (interface declared stable), relax to `{:inexora, "~> 1.0"}`
   and let the two version independently.
 
+Because `ecto_oracle` needs an adapter-free driver, **Phase 3 (inexora 0.3.0)
+must publish before `ecto_oracle` can** — the reverse of the original plan's
+ordering.
+
 ## Trigger order (what's left — all manual)
 
-1. **Publish the driver:** push `develop` + `v0.2.0`
-   (`git push --no-recurse-submodules origin develop && … v0.2.0`),
-   then `mix hex.user auth` → `mix hex.publish`.
-2. **Extract:** run the Phase 1 filter-repo spec → new `ecto_oracle` repo; create it
-   on GitHub (`sparkworx/ecto_oracle`) and push.
-3. **Scaffold:** drop in `ecto_oracle-staging/` files, apply the 3 test fixups
-   (`PHASE2-NOTES.md`), add `LICENSE`, fill `<SOURCE_COMMIT>`; `mix test` +
-   `mix hex.publish` for `ecto_oracle` 0.2.0.
-4. **Clean up the driver:** merge `phase3-remove-adapter` → `develop`, delete
-   `docs/ecto_oracle-staging/`, release `inexora` 0.3.0.
-5. **Re-lockstep:** release `ecto_oracle` 0.3.0 pinned `{:inexora, "~> 0.3.0"}`.
+Local work done: extraction (Phase 1) and the `../ecto_oracle` package (Phase 2)
+are built and verified. Remaining steps are outward-facing:
+
+1. **Push the adapter repo:** create `sparkworx/ecto_oracle` on GitHub, add it as
+   `origin` to `../ecto_oracle`, and push (14 extracted commits + scaffolding).
+2. **(Optional) Publish inexora 0.2.0** for existing bundled-adapter users: push
+   `develop` + `v0.2.0` (`--no-recurse-submodules`), `mix hex.user auth` →
+   `mix hex.publish`. Skippable — nothing in the split depends on it.
+3. **Release the adapter-free driver:** merge `phase3-remove-adapter` → `develop`,
+   tag `v0.3.0`, push, `mix hex.publish` → `inexora` 0.3.0 on Hex.
+4. **Publish the adapter:** once `inexora` 0.3.0 is on Hex, in `../ecto_oracle`
+   run `mix deps.get` (resolves the `~> 0.3.0` pin), `mix test`, `mix hex.publish`
+   → `ecto_oracle` 0.3.0.
+5. **Clean up:** delete `docs/ecto_oracle-staging/` from `inexora` (superseded).

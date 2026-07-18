@@ -67,6 +67,13 @@ The four architecture-review refactors are all post-split-safe and gate nothing 
 - RETURNING structurally (adapter-internal; preserves the frozen `returning` shape)
 - One C decoder (fold the fetch switch into `data_to_term`)
 
+> **Correction (Phase 2 implementation).** The `{:inexora, "~> 0.2.0"}` pin in
+> decision #11 and step 8 is **wrong**: `inexora` 0.2.0 still bundles
+> `Ecto.Adapters.Oracle`, so `ecto_oracle` depending on it collides on the module
+> name. `ecto_oracle`'s first release is **0.3.0** pinning `{:inexora, "~> 0.3.0"}`
+> (the first adapter-free driver). See the collision correction in
+> [SPLIT-STATUS.md](SPLIT-STATUS.md).
+
 ## Versioning going forward
 
 Driver bumps its **minor** on any public-interface change; adapter ships a matching release pinned to that minor. At `inexora 1.0` (interface declared stable), relax the adapter to `{:inexora, "~> 1.0"}` and let the two version independently.
