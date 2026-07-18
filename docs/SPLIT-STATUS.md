@@ -13,16 +13,14 @@ _Last updated: 2026-07-17._
 |-------|------|--------|-------|
 | 0 | Freeze the driver's public interface | ✅ **done, merged to `develop`, tagged `v0.2.0`** | commits `fd80db0`, `6ba64e6`; release prep `0fa6bf6`, `df52473` |
 | 1 | `git filter-repo` extraction | ✅ **executed locally** (71→14 commits, blame preserved) | ran into `../ecto_oracle` |
-| 2 | Stand up the `ecto_oracle` package | ✅ **implemented & verified locally** (29 non-DB tests pass) | repo at `../ecto_oracle` (local only, no remote) |
-| 3 | Remove the bundled adapter from `inexora` | ✅ **drafted, NOT merged** (breaking; gated on ecto_oracle publish) | branch `phase3-remove-adapter` |
+| 2 | Stand up the `ecto_oracle` package | ✅ **published to GitHub** (`sparkworx/ecto_oracle`, 29 non-DB tests pass) | pushed; not yet on Hex |
+| 3 | Remove the bundled adapter from `inexora` | ✅ **merged to `develop`, tagged `v0.3.0`** | driver is now 0.3.0, adapter-free |
 
-`../ecto_oracle` is a real local git repo (14 extracted commits + 1 scaffolding
-commit `1b60ed8`), but **nothing outward-facing has happened**: `v0.2.0` is not
-pushed or published, `../ecto_oracle` has **no remote** and is unpushed, and
-`phase3-remove-adapter` is not merged. The staged
-[`ecto_oracle-staging/`](ecto_oracle-staging/) is now **superseded** by
-`../ecto_oracle` — keep it as the only in-`inexora` backup until `ecto_oracle`
-is pushed to GitHub, then delete it.
+`sparkworx/ecto_oracle` is on GitHub (14 extracted commits + scaffolding
+`1b60ed8`); the superseded `ecto_oracle-staging/` backup has been deleted from
+`inexora`. **What's left is Hex publishing only:** `develop`/`v0.3.0` is committed
+locally but **not pushed**, `inexora` 0.3.0 is **not on Hex**, and `ecto_oracle`
+0.3.0 is **not on Hex** (its `~> 0.3.0` pin needs `inexora` 0.3.0 published first).
 
 ## Correction — the 0.2.0 pairing collides
 
@@ -115,19 +113,19 @@ Because `ecto_oracle` needs an adapter-free driver, **Phase 3 (inexora 0.3.0)
 must publish before `ecto_oracle` can** — the reverse of the original plan's
 ordering.
 
-## Trigger order (what's left — all manual)
+## Trigger order (what's left — Hex publishing only)
 
-Local work done: extraction (Phase 1) and the `../ecto_oracle` package (Phase 2)
-are built and verified. Remaining steps are outward-facing:
+Done: Phase 1 extraction, the `../ecto_oracle` package (Phase 2, pushed to
+GitHub), Phase 3 merged to `develop` + tagged `v0.3.0`, staging deleted.
+Remaining steps are all outward-facing Hex/push work:
 
-1. **Push the adapter repo:** create `sparkworx/ecto_oracle` on GitHub, add it as
-   `origin` to `../ecto_oracle`, and push (14 extracted commits + scaffolding).
-2. **(Optional) Publish inexora 0.2.0** for existing bundled-adapter users: push
-   `develop` + `v0.2.0` (`--no-recurse-submodules`), `mix hex.user auth` →
-   `mix hex.publish`. Skippable — nothing in the split depends on it.
-3. **Release the adapter-free driver:** merge `phase3-remove-adapter` → `develop`,
-   tag `v0.3.0`, push, `mix hex.publish` → `inexora` 0.3.0 on Hex.
+1. ~~Push the adapter repo to GitHub~~ — **done** (`sparkworx/ecto_oracle`).
+2. **(Optional) Publish inexora 0.2.0** for existing bundled-adapter users, from
+   the `v0.2.0` tag: `mix hex.user auth` → `mix hex.publish`. Skippable — nothing
+   in the split depends on it.
+3. **Release the adapter-free driver:** push `develop` + `v0.3.0`
+   (`git push --no-recurse-submodules origin develop v0.3.0`), then
+   `mix hex.publish` → `inexora` 0.3.0 on Hex.
 4. **Publish the adapter:** once `inexora` 0.3.0 is on Hex, in `../ecto_oracle`
    run `mix deps.get` (resolves the `~> 0.3.0` pin), `mix test`, `mix hex.publish`
    → `ecto_oracle` 0.3.0.
-5. **Clean up:** delete `docs/ecto_oracle-staging/` from `inexora` (superseded).
