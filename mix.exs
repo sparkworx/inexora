@@ -1,7 +1,7 @@
 defmodule Inexora.MixProject do
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.2.0"
   @source_url "https://github.com/sparkworx/inexora"
 
   def project do
@@ -47,7 +47,7 @@ defmodule Inexora.MixProject do
       main: "readme",
       source_ref: "v#{@version}",
       source_url: @source_url,
-      extras: ["README.md", "LICENSE"],
+      extras: ["README.md", "CHANGELOG.md", "LICENSE"],
       groups_for_modules: [
         "Ecto Adapter": [
           Ecto.Adapters.Oracle
@@ -76,7 +76,7 @@ defmodule Inexora.MixProject do
       links: %{
         "GitHub" => @source_url
       },
-      files: ~w(lib c_src priv .formatter.exs mix.exs README.md LICENSE Makefile)
+      files: ~w(lib c_src priv .formatter.exs mix.exs README.md CHANGELOG.md LICENSE Makefile)
     ]
   end
 end
