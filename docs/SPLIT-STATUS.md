@@ -7,6 +7,12 @@ Live status of splitting the Ecto adapter out of `inexora` into a standalone
 
 _Last updated: 2026-07-17._
 
+> **Publishing is deliberately deferred — nothing is stalled or broken.** All
+> local work is complete and verified; `sparkworx/ecto_oracle` is on GitHub and
+> `inexora` develop is at 0.3.0 (tagged, unpushed). The only remaining steps are
+> Hex publishing, which is on hold pending a Hex account. Pick up from the
+> trigger order below whenever that's ready.
+
 ## Phase status
 
 | Phase | What | Status | Where |
