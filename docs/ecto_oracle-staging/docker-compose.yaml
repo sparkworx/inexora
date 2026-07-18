@@ -1,0 +1,41 @@
+# Docker Compose for the Ecto Oracle adapter integration tests.
+#
+# Usage:
+#   docker compose up -d      # Start Oracle database
+#   docker compose logs -f    # Watch startup logs (first run takes a few minutes)
+#   docker compose down       # Stop and remove container
+#
+# Test connection:
+#   ORACLE_DATABASE_AVAILABLE=1 mix test --include oracle_database
+#
+# Mirrors the `inexora` driver's harness so the two suites behave identically;
+# container_name differs so both can run on one host without colliding.
+
+services:
+  oracle:
+    # Official Oracle Free image (requires Oracle account for first pull)
+    # Login first: docker login container-registry.oracle.com
+    image: container-registry.oracle.com/database/free:latest
+
+    # Alternative: Gerald Venzl's optimized image (no login required, faster startup)
+    # image: gvenzl/oracle-free:23-slim
+
+    container_name: ecto-oracle-test
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PWD=Welcome4321      # Oracle standard image
+      - ORACLE_PASSWORD=Welcome4321 # gvenzl's image
+    volumes:
+      - ./docker/init:/opt/oracle/scripts/startup:ro    # Oracle standard image
+      - ./docker/init:/container-entrypoint-initdb.d:ro # gvenzl's image
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s system/Welcome4321@localhost:1521/FREEPDB1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+volumes:
+  oracle-data:
