@@ -211,27 +211,4 @@ defmodule Inexora.FloatTypeTest do
       assert_in_delta retrieved_val, neg_val, 0.001
     end
   end
-
-  describe "Float types in Ecto DDL" do
-    test "generates correct DDL for float types" do
-      alias Ecto.Adapters.Oracle.Connection, as: SQL
-
-      columns = [
-        {:add, :id, :bigserial, [primary_key: true]},
-        {:add, :float_field, :float, []},
-        {:add, :binary_float_field, :binary_float, []},
-        {:add, :binary_double_field, :binary_double, []}
-      ]
-
-      table = %Ecto.Migration.Table{name: "float_ddl_test"}
-      [ddl] = SQL.execute_ddl({:create, table, columns})
-      result = IO.iodata_to_binary(ddl)
-
-      assert result =~ "CREATE TABLE"
-      assert result =~ ~s("FLOAT_DDL_TEST")
-      # :float maps to BINARY_DOUBLE by default
-      assert result =~ "BINARY_DOUBLE"
-      assert result =~ "BINARY_FLOAT"
-    end
-  end
 end

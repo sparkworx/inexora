@@ -1,6 +1,6 @@
 # Inexora
 
-An Oracle Database driver and Ecto adapter for Elixir. The domain is the translation between Elixir values and Oracle's wire representations, and the lifecycle of the native resources that carry them.
+An Oracle Database driver for Elixir. The domain is the translation between Elixir values and Oracle's wire representations, and the lifecycle of the native resources that carry them. The Ecto adapter lives in the companion [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) repo (see [ADR-0002](docs/adr/0002-split-ecto-adapter-into-ecto-oracle.md)).
 
 ## Language
 

@@ -1,6 +1,10 @@
 # Inexora
 
-An Oracle Database driver and Ecto adapter for Elixir, built on [ODPI-C](https://oracle.github.io/odpi/).
+An Oracle Database driver for Elixir, built on [ODPI-C](https://oracle.github.io/odpi/).
+
+> **Using Ecto?** The Ecto adapter (`Ecto.Adapters.Oracle`) now lives in the
+> companion [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) package,
+> which depends on this driver. Add `ecto_oracle` to use Oracle with Ecto.
 
 > **Warning**
 > This project is under active development and has not been extensively tested in real-world applications. It likely contains bugs and missing features. Do not use this in production if your livelihood depends on it. Contributions and bug reports are welcome!
@@ -8,7 +12,7 @@ An Oracle Database driver and Ecto adapter for Elixir, built on [ODPI-C](https:/
 ## Features
 
 - Native Oracle connectivity via ODPI-C (Oracle Database Programming Interface for C)
-- Full Ecto 3.x adapter support
+- Ecto 3.x support via the companion [`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) package
 - Connection pooling via `db_connection`
 - Transaction support (begin, commit, rollback)
 - Prepared statements with parameter binding
@@ -72,29 +76,10 @@ mix compile
 
 ### With Ecto
 
-Configure your repository in `config/config.exs`:
-
-```elixir
-config :my_app, MyApp.Repo,
-  adapter: Ecto.Adapters.Oracle,
-  username: "scott",
-  password: "tiger",
-  database: "localhost:1521/FREEPDB1",
-  pool_size: 10
-```
-
-Or using hostname/port/service_name:
-
-```elixir
-config :my_app, MyApp.Repo,
-  adapter: Ecto.Adapters.Oracle,
-  username: "scott",
-  password: "tiger",
-  hostname: "localhost",
-  port: 1521,
-  service_name: "FREEPDB1",
-  pool_size: 10
-```
+Ecto support has moved to the companion
+[`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) package (adapter
+`Ecto.Adapters.Oracle`), which depends on this driver. See its README for repo
+configuration and usage.
 
 ## Usage
 
@@ -109,63 +94,15 @@ config :my_app, MyApp.Repo,
 
 # Simple query
 {:ok, _query, result} = DBConnection.execute(conn,
-  %Inexora.Query{sql: "SELECT * FROM employees WHERE department_id = :1"},
+  Inexora.Query.new("SELECT * FROM employees WHERE department_id = :1"),
   [10]
 )
 
 IO.inspect(result.rows)
 ```
 
-### With Ecto
-
-```elixir
-defmodule MyApp.Repo do
-  use Ecto.Repo,
-    otp_app: :my_app,
-    adapter: Ecto.Adapters.Oracle
-end
-
-defmodule MyApp.Employee do
-  use Ecto.Schema
-
-  # Auto-generated IDs work with Oracle IDENTITY columns
-  @primary_key {:id, :id, autogenerate: true}
-  schema "employees" do
-    field :name, :string
-    field :salary, :decimal
-    field :hire_date, :date
-  end
-end
-
-# Query
-employees = MyApp.Repo.all(
-  from e in MyApp.Employee,
-  where: e.salary > 50000
-)
-
-# Insert - ID is auto-generated and returned via RETURNING INTO
-{:ok, employee} = MyApp.Repo.insert(%MyApp.Employee{
-  name: "John Doe",
-  salary: Decimal.new("75000.00"),
-  hire_date: ~D[2024-01-15]
-})
-
-# employee.id is now populated with the auto-generated value
-IO.puts("Created employee with ID: #{employee.id}")
-```
-
-### Bulk Inserts
-
-```elixir
-# insert_all works with IDENTITY columns
-entries = [
-  %{name: "Alice", salary: Decimal.new("60000"), hire_date: ~D[2024-01-01]},
-  %{name: "Bob", salary: Decimal.new("65000"), hire_date: ~D[2024-02-01]},
-  %{name: "Charlie", salary: Decimal.new("70000"), hire_date: ~D[2024-03-01]}
-]
-
-{3, nil} = MyApp.Repo.insert_all(MyApp.Employee, entries)
-```
+For Ecto repos, schemas, and `insert_all`, see the
+[`ecto_oracle`](https://github.com/sparkworx/ecto_oracle) package.
 
 ### Streaming Large Result Sets
 

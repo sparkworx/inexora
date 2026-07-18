@@ -156,25 +156,4 @@ defmodule Inexora.RawTypeTest do
       assert [[nil]] = result.rows
     end
   end
-
-  describe "RAW in Ecto DDL" do
-    test "generates correct DDL for RAW type" do
-      alias Ecto.Adapters.Oracle.Connection, as: SQL
-
-      columns = [
-        {:add, :id, :bigserial, [primary_key: true]},
-        {:add, :raw_field, :raw, [size: 50]},
-        {:add, :long_raw_field, :long_raw, []}
-      ]
-
-      table = %Ecto.Migration.Table{name: "raw_ddl_test"}
-      [ddl] = SQL.execute_ddl({:create, table, columns})
-      result = IO.iodata_to_binary(ddl)
-
-      assert result =~ "CREATE TABLE"
-      assert result =~ ~s("RAW_DDL_TEST")
-      assert result =~ "RAW(50)"
-      assert result =~ "LONG RAW"
-    end
-  end
 end

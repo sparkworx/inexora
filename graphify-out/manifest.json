@@ -674,16 +674,6 @@
     "ast_hash": "ab46c19e535c9327a8bce52dbeb979c4",
     "semantic_hash": "ab46c19e535c9327a8bce52dbeb979c4"
   },
-  "lib/ecto/adapters/oracle.ex": {
-    "mtime": 1768615997.9430892,
-    "ast_hash": "d6913ac51a4601e5726546379781d236",
-    "semantic_hash": "d6913ac51a4601e5726546379781d236"
-  },
-  "lib/ecto/adapters/oracle/connection.ex": {
-    "mtime": 1784332628.2876947,
-    "ast_hash": "8bc39883da8fce1a2c9df121367722d1",
-    "semantic_hash": ""
-  },
   "lib/inexora.ex": {
     "mtime": 1768615997.943434,
     "ast_hash": "33a7fa973b25c5516f1679de7232c585",
@@ -695,7 +685,7 @@
     "semantic_hash": "3b460526afacd6ce5cb9b562291c869b"
   },
   "lib/inexora/connection.ex": {
-    "mtime": 1784332660.7771957,
+    "mtime": 1784332813.6292944,
     "ast_hash": "ee4c864aa2df1936d1f0374a046188f4",
     "semantic_hash": ""
   },
@@ -705,7 +695,7 @@
     "semantic_hash": "2cf9f81c668e09500d96097b92af96de"
   },
   "lib/inexora/error.ex": {
-    "mtime": 1784332679.7176046,
+    "mtime": 1784332813.6295512,
     "ast_hash": "fa6bdf74fcd2eec87497c3010fa03aed",
     "semantic_hash": ""
   },
@@ -715,12 +705,12 @@
     "semantic_hash": "45ad532b216a453148280c6813ff69cc"
   },
   "lib/inexora/query.ex": {
-    "mtime": 1784332585.1008902,
+    "mtime": 1784332813.6297917,
     "ast_hash": "3805fa1f7655790cb0c884796552d5b0",
     "semantic_hash": ""
   },
   "lib/inexora/result.ex": {
-    "mtime": 1784332686.8577666,
+    "mtime": 1784332813.630079,
     "ast_hash": "e20d7e508ea0e49911ce0bed15974534",
     "semantic_hash": ""
   },
@@ -730,19 +720,9 @@
     "semantic_hash": "8997c923ce885eaabf4baa334ae0d7a0"
   },
   "mix.exs": {
-    "mtime": 1771108161.6198764,
-    "ast_hash": "4a3d24d88cb0f4ba1f674f8d2247f9f3",
-    "semantic_hash": "4a3d24d88cb0f4ba1f674f8d2247f9f3"
-  },
-  "test/ecto/adapters/oracle_integration_test.exs": {
-    "mtime": 1768695473.2230358,
-    "ast_hash": "233c945547017d858a16ddaa91c8bbde",
-    "semantic_hash": "233c945547017d858a16ddaa91c8bbde"
-  },
-  "test/ecto/adapters/oracle_test.exs": {
-    "mtime": 1768615997.945143,
-    "ast_hash": "dcbb2c6f8e5b1e55cbc198cd9b8cf7e9",
-    "semantic_hash": "dcbb2c6f8e5b1e55cbc198cd9b8cf7e9"
+    "mtime": 1784334492.656196,
+    "ast_hash": "fd41ea8691d19276ea51ae347c347748",
+    "semantic_hash": ""
   },
   "test/inexora/batch_binding_test.exs": {
     "mtime": 1768615997.9453425,
@@ -770,14 +750,14 @@
     "semantic_hash": "9bb5c1fe31dc669c25015e28dd5e4402"
   },
   "test/inexora/float_type_test.exs": {
-    "mtime": 1768615997.9460342,
-    "ast_hash": "976c86c3212c3978b196c1c239e9892f",
-    "semantic_hash": "976c86c3212c3978b196c1c239e9892f"
+    "mtime": 1784334449.2962384,
+    "ast_hash": "219067a620298ab841c26f792bcf30df",
+    "semantic_hash": ""
   },
   "test/inexora/interval_type_test.exs": {
-    "mtime": 1768615997.9461417,
-    "ast_hash": "bb0f48948ac0065676e73e5e4a58678c",
-    "semantic_hash": "bb0f48948ac0065676e73e5e4a58678c"
+    "mtime": 1784334452.3482027,
+    "ast_hash": "ddff2e04f87693fa444f533108dae063",
+    "semantic_hash": ""
   },
   "test/inexora/named_params_test.exs": {
     "mtime": 1768615997.9462948,
@@ -805,9 +785,9 @@
     "semantic_hash": "907f0da10ae94b0aa0ff1f5e8f3079ab"
   },
   "test/inexora/raw_type_test.exs": {
-    "mtime": 1768615997.9468358,
-    "ast_hash": "4efa451a57b29f4875b8200f4889c09a",
-    "semantic_hash": "4efa451a57b29f4875b8200f4889c09a"
+    "mtime": 1784334461.3812363,
+    "ast_hash": "3f8f3be8602f0ff596e89dcf62e2621c",
+    "semantic_hash": ""
   },
   "test/inexora/result_test.exs": {
     "mtime": 1768615997.9469242,
@@ -815,14 +795,14 @@
     "semantic_hash": "7196c85f9c95efe5f9f4ca0dacde4929"
   },
   "test/inexora/returning_test.exs": {
-    "mtime": 1768615997.947066,
-    "ast_hash": "ad863741bc3b6c9b1e08c6839a212bcf",
-    "semantic_hash": "ad863741bc3b6c9b1e08c6839a212bcf"
+    "mtime": 1784334474.9244015,
+    "ast_hash": "e688d06511b25d1fd5651379f5297b66",
+    "semantic_hash": ""
   },
   "test/inexora/rowid_type_test.exs": {
-    "mtime": 1768615997.947159,
-    "ast_hash": "b55558b400c3b88ffd07b35a3f3bfcbe",
-    "semantic_hash": "b55558b400c3b88ffd07b35a3f3bfcbe"
+    "mtime": 1784334464.832749,
+    "ast_hash": "bb060b385c1dc37a33f36e8849a8e0d9",
+    "semantic_hash": ""
   },
   "test/inexora/type_test.exs": {
     "mtime": 1768615997.947257,
@@ -870,14 +850,14 @@
     "semantic_hash": "4665fa5386433ac7b3ba5013ec8bfcab"
   },
   "CLAUDE.md": {
-    "mtime": 1784310259.6295893,
-    "ast_hash": "b0579d6a1a7017173ba32aeb261fc475",
-    "semantic_hash": "b0579d6a1a7017173ba32aeb261fc475"
+    "mtime": 1784334685.7974117,
+    "ast_hash": "e10a296a511e4ca2f0d989f7d8aad927",
+    "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1768874328.3071241,
-    "ast_hash": "79c05d4e374d83311ac813e993f5a4ce",
-    "semantic_hash": "79c05d4e374d83311ac813e993f5a4ce"
+    "mtime": 1784334600.698453,
+    "ast_hash": "624fb8affd6be67d80ab8d9f356990bb",
+    "semantic_hash": ""
   },
   "c_src/odpi/.github/ISSUE_TEMPLATE/announcements.md": {
     "mtime": 1768887815.3105774,
@@ -1520,9 +1500,9 @@
     "semantic_hash": "1ccc3857dec583f1134f7a0dd6c64a08"
   },
   "CONTEXT.md": {
-    "mtime": 1784311730.9265866,
-    "ast_hash": "62e4313ceeecd2602ca828bbfb80f8d9",
-    "semantic_hash": "62e4313ceeecd2602ca828bbfb80f8d9"
+    "mtime": 1784334692.9975076,
+    "ast_hash": "15ae740a168923297ddb7d2eb5877d79",
+    "semantic_hash": ""
   },
   "docs/adapter-split-plan.md": {
     "mtime": 1784314695.0475047,
@@ -1563,5 +1543,10 @@
     "mtime": 1784310259.637473,
     "ast_hash": "d173ad3edb496db48b0b248de8ee2adf",
     "semantic_hash": "d173ad3edb496db48b0b248de8ee2adf"
+  },
+  "CHANGELOG.md": {
+    "mtime": 1784334707.969575,
+    "ast_hash": "633d781b4bec9f0d6409168e4affc76b",
+    "semantic_hash": ""
   }
 }

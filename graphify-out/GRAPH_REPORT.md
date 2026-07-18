@@ -1,16 +1,16 @@
 # Graph Report - inexora  (2026-07-17)
 
 ## Corpus Check
-- 198 files · ~372,276 words
+- 195 files · ~365,225 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2435 nodes · 11025 edges · 127 communities (86 shown, 41 thin omitted)
-- Extraction: 49% EXTRACTED · 51% INFERRED · 0% AMBIGUOUS · INFERRED: 5611 edges (avg confidence: 0.8)
+- 2332 nodes · 10806 edges · 123 communities (87 shown, 36 thin omitted)
+- Extraction: 48% EXTRACTED · 52% INFERRED · 0% AMBIGUOUS · INFERRED: 5610 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `43e8f7d8`
+- Built from commit: `df524737`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -121,11 +121,7 @@
 - Installation Questions Template
 - Oracle Copyright Notice
 - dpiData_getStmt
-- Inexora
 - Type owns all per-type facts; Variable stays type-agnostic
-- dpiData_getJsonArray
-- dpiData_getJsonObject
-- dpiData_getVector
 
 ## God Nodes (most connected - your core abstractions)
 1. `dpiTestCase_setFailedFromError()` - 424 edges
@@ -177,79 +173,79 @@
 - **Type Owns Facts, Variable Stays Agnostic** — docs_adr_0001_type_owns_all_per_type_facts_type_ownership, docs_adr_0001_type_owns_all_per_type_facts_inexora_type, docs_adr_0001_type_owns_all_per_type_facts_inexora_variable, context_type_mapping, context_variable_spec [INFERRED 0.85]
 - **dpiError Four-Layer Surface Path** — graphify_out_memory_query_20260625_020622_how_does_a_c_layer_dpierror_surface_into_the_elixi_error_surface_path, graphify_out_memory_query_20260625_020622_how_does_a_c_layer_dpierror_surface_into_the_elixi_lossy_error_contract, graphify_out_memory_query_20260625_020622_how_does_a_c_layer_dpierror_surface_into_the_elixi_context_use_after_free [EXTRACTED 1.00]
 
-## Communities (127 total, 41 thin omitted)
+## Communities (123 total, 36 thin omitted)
 
 ### Community 0 - "Object Type & AQ Samples"
-Cohesion: 0.05
-Nodes (215): main(), dpiConn_getObjectType(), dpiBytes, dpiData, dpiLob, dpiObject, dpiTimestamp, dpiData_getBool() (+207 more)
+Cohesion: 0.06
+Nodes (186): main(), main(), dpiConn_getObjectType(), dpiBytes, dpiData, dpiLob, dpiObject, dpiTimestamp (+178 more)
 
 ### Community 1 - "AQ Queues & Message Props"
-Cohesion: 0.05
-Nodes (145): main(), main(), dpiDeqOptions, dpiObjectType, dpiQueue, dpiConn_newDeqOptions(), dpiConn_newMsgProps(), dpiConn_newQueue() (+137 more)
+Cohesion: 0.15
+Nodes (47): main(), main(), dpiObjectType, dpiQueue, dpiConn_newQueue(), dpiDeqOptions_setWait(), dpiMsgProps_getPayload(), dpiMsgProps_setPayloadBytes() (+39 more)
 
 ### Community 2 - "Connection Pooling"
-Cohesion: 0.07
-Nodes (92): dpiEncodingInfo, dpiPool, UNUSED, dpiPool__accessTokenCallback(), dpiPool_addRef(), dpiPool__checkConnected(), dpiPool_close(), dpiPool__getAttributeUint() (+84 more)
+Cohesion: 0.06
+Nodes (101): dpiAccessToken, dpiCommonCreateParams, dpiConn, dpiConnCreateParams, dpiContext, dpiEncodingInfo, dpiError, dpiPool (+93 more)
 
 ### Community 3 - "Inexora NIF Core"
 Cohesion: 0.08
-Nodes (99): binary_to_cstring(), dpiContext, dpiData, dpiErrorInfo, dpiNativeTypeNum, connection_destructor(), context_destructor(), context_options_free() (+91 more)
+Nodes (100): binary_to_cstring(), dpiContext, dpiData, dpiErrorInfo, dpiNativeTypeNum, connection_destructor(), context_destructor(), context_options_free() (+92 more)
 
 ### Community 4 - "Data Buffer Binds"
-Cohesion: 0.21
-Nodes (20): dpiConn, dpiEnqOptions, dpiError, dpiMessageDeliveryMode, dpiVisibility, dpiEnqOptions_addRef(), dpiEnqOptions__create(), dpiEnqOptions__free() (+12 more)
+Cohesion: 0.13
+Nodes (43): dpiDeqOptions, dpiEnqOptions, dpiObject, dpiConn_deqObject(), dpiConn_newDeqOptions(), dpiConn_newEnqOptions(), dpiDeqOptions_release(), dpiConn (+35 more)
 
 ### Community 5 - "Ecto SQL Generation"
-Cohesion: 0.06
-Nodes (72): Ecto.Adapters.Oracle.Connection, all(), boolean(), column_change(), column_definition(), column_definitions(), column_options(), column_type() (+64 more)
+Cohesion: 0.15
+Nodes (39): dpiGen__startPublicFn(), dpiConn, dpiError, dpiJson, dpiMessageDeliveryMode, dpiMsgProps, dpiObject, dpiTimestamp (+31 more)
 
 ### Community 6 - "ODPI-C Connection Core"
 Cohesion: 0.09
-Nodes (78): dpiConn, dpiDataBuffer, dpiEncodingInfo, dpiEnqOptions, dpiJson, dpiMsgProps, dpiObject, dpiSodaDb (+70 more)
+Nodes (75): dpiConn, dpiDataBuffer, dpiEncodingInfo, dpiJson, dpiSodaDb, dpiSubscr, dpiSubscrCreateParams, dpiVector (+67 more)
 
 ### Community 7 - "LOB Handling"
-Cohesion: 0.12
-Nodes (65): dpiLob, dpiOracleTypeNum, dpiConn_newTempLob(), dpiConn, dpiError, dpiLob, dpiOracleType, dpiOracleTypeNum (+57 more)
+Cohesion: 0.21
+Nodes (41): dpiLob, dpiOracleTypeNum, dpiConn_newTempLob(), dpiLob_getSize(), dpiLob_release(), dpiConn, dpiLob, dpiOracleTypeNum (+33 more)
 
 ### Community 8 - "Statement & Query Tests"
-Cohesion: 0.18
-Nodes (50): dpiStmt, dpiConn_prepareStmt(), dpiStmt_getInfo(), dpiTest_1203(), dpiTest_1216(), dpiTestCase, dpiTestParams, dpiTest_2000() (+42 more)
+Cohesion: 0.17
+Nodes (46): dpiStmt, dpiConn_prepareStmt(), dpiStmt_getInfo(), dpiTest_1203(), dpiConn, dpiTestCase, dpiTestParams, dpiTest_2000() (+38 more)
 
 ### Community 9 - "Statement Execution"
-Cohesion: 0.13
-Nodes (55): dpiConn, dpiData, dpiDataBuffer, dpiError, dpiErrorInfo, dpiNativeTypeNum, dpiObjectType, dpiOracleTypeNum (+47 more)
+Cohesion: 0.12
+Nodes (60): dpiGen__setRefCount(), dpiConn, dpiData, dpiDataBuffer, dpiError, dpiErrorInfo, dpiNativeTypeNum, dpiObjectType (+52 more)
 
 ### Community 10 - "Handle & Variable Lifecycle"
-Cohesion: 0.13
-Nodes (50): dpiConn__close(), dpiError__set(), dpiError, dpiGen__checkHandle(), dpiGen__setRefCount(), dpiBytes, dpiConn, dpiData (+42 more)
+Cohesion: 0.14
+Nodes (47): dpiError__set(), dpiGen__checkHandle(), dpiUtils__allocateMemory(), dpiBytes, dpiConn, dpiData, dpiError, dpiJson (+39 more)
 
 ### Community 11 - "Variable & Number Tests"
-Cohesion: 0.21
-Nodes (37): dpiData, dpiNativeTypeNum, dpiVar, dpiConn_newVar(), dpiTestCase, dpiTestParams, dpiTest_1900(), dpiTest_1901() (+29 more)
+Cohesion: 0.20
+Nodes (33): dpiJson_setFromText(), dpiTestCase, dpiTestParams, dpiTest_1900(), dpiTest_1901(), dpiTest_1902(), dpiTest_1903(), dpiTest_1904() (+25 more)
 
 ### Community 12 - "Data & JSON Buffers"
-Cohesion: 0.20
-Nodes (37): dpiConn__setShardingKeyValue(), dpiDataBuffer, dpiEnv, dpiError, dpiData_getIsNull(), dpiDataBuffer__fromOracleDate(), dpiDataBuffer__fromOracleDateAsDouble(), dpiDataBuffer__fromOracleIntervalDS() (+29 more)
+Cohesion: 0.14
+Nodes (45): dpiConn__setShardingKeyValue(), dpiDataBuffer, dpiEnv, dpiError, dpiJsonArray, dpiJsonObject, dpiStmt, dpiVector (+37 more)
 
 ### Community 13 - "OCI AQ Bindings"
-Cohesion: 0.13
-Nodes (38): dpiConn, dpiError, dpiStmt, dpiVar, dpiOci__aqDeq(), dpiOci__aqDeqArray(), dpiOci__aqEnq(), dpiOci__aqEnqArray() (+30 more)
+Cohesion: 0.11
+Nodes (45): dpiConn, dpiError, dpiJson, dpiJznDomDoc, dpiStmt, dpiVar, dpiOci__aqDeq(), dpiOci__aqDeqArray() (+37 more)
 
 ### Community 14 - "C Test Harness"
-Cohesion: 0.08
-Nodes (64): main(), main(), main(), main(), main(), main(), main(), main() (+56 more)
+Cohesion: 0.10
+Nodes (49): main(), main(), main(), main(), main(), main(), main(), main() (+41 more)
 
 ### Community 15 - "Vector Type"
-Cohesion: 0.21
-Nodes (43): dpiVector_release(), dpiConn, dpiNativeTypeNum, dpiOracleTypeNum, dpiTestCase, dpiTestParams, dpiVectorInfo, dpiTest_4400() (+35 more)
+Cohesion: 0.15
+Nodes (54): dpiConn, dpiError, dpiVector, dpiVectorInfo, dpiVector_addRef(), dpiVector__allocate(), dpiVector__clearDimensions(), dpiVector__free() (+46 more)
 
 ### Community 17 - "Error & Debug Infrastructure"
-Cohesion: 0.07
-Nodes (50): dpiVersionInfo, dpiConn__free(), dpiConn__getServerVersion(), dpiConnCreateParams, dpiContext__initConnCreateParams(), dpiEnv__free(), dpiError__setFromOS(), dpiEnv (+42 more)
+Cohesion: 0.18
+Nodes (17): dpiConn__close(), dpiConn__free(), dpiEnqOptions__free(), dpiError, dpiHandleList__addHandle(), dpiHandleList__create(), dpiHandleList__free(), dpiHandleList__removeHandle() (+9 more)
 
 ### Community 18 - "SODA Collections"
 Cohesion: 0.21
-Nodes (37): dpiOci__handleFree(), dpiError, dpiSodaColl, dpiSodaDb, dpiSodaDoc, dpiSodaDocCursor, dpiSodaOperOptions, dpiStringList (+29 more)
+Nodes (38): dpiOci__handleFree(), dpiError, dpiSodaColl, dpiSodaDb, dpiSodaDoc, dpiSodaDocCursor, dpiSodaOperOptions, dpiStringList (+30 more)
 
 ### Community 19 - "SODA Collection Tests"
 Cohesion: 0.27
@@ -260,12 +256,12 @@ Cohesion: 0.23
 Nodes (24): dpiConn, dpiTestCase, dpiTestParams, dpiTest_1300(), dpiTest_1301(), dpiTest_1302(), dpiTest_1303(), dpiTest_1304() (+16 more)
 
 ### Community 21 - "Temp LOB Demos"
-Cohesion: 0.14
-Nodes (55): main(), main(), main(), main(), main(), main(), main(), main() (+47 more)
+Cohesion: 0.12
+Nodes (83): main(), main(), main(), main(), main(), main(), main(), main() (+75 more)
 
 ### Community 22 - "Connection Creation & Params"
-Cohesion: 0.27
-Nodes (19): dpiCommonCreateParams, dpiConnCreateParams, dpiContext, dpiError, dpiPool, dpiConn__attachExternal(), dpiConn__create(), dpiConn__createStandalone() (+11 more)
+Cohesion: 0.13
+Nodes (36): dpiCommonCreateParams, dpiConnCreateParams, dpiContext, dpiError, dpiPool, dpiVersionInfo, dpiConn__attachExternal(), dpiConn__create() (+28 more)
 
 ### Community 23 - "ODPI-C Demo Programs"
 Cohesion: 0.04
@@ -296,68 +292,68 @@ Cohesion: 0.19
 Nodes (28): dpiOci__attrGet(), dpiOci__collGetElem(), dpiOci__collSize(), dpiConn, dpiError, dpiStmt, dpiSubscr, dpiSubscrCreateParams (+20 more)
 
 ### Community 30 - "Inexora Elixir Tests"
-Cohesion: 0.11
-Nodes (12): Inexora.ConnectionTest, Inexora.CursorTest, Inexora.ErrorTest, Inexora.FloatTypeTest, Inexora.IntervalTypeTest, Inexora.NamedParamsTest, Inexora.QueryExecutionTest, Inexora.QueryTest (+4 more)
+Cohesion: 0.09
+Nodes (13): Inexora.Error, Inexora.ConnectionTest, Inexora.CursorTest, Inexora.ErrorTest, Inexora.FloatTypeTest, Inexora.IntervalTypeTest, Inexora.NamedParamsTest, Inexora.QueryExecutionTest (+5 more)
 
 ### Community 31 - "AQ/Subscr Enumeration Docs"
 Cohesion: 0.10
 Nodes (28): dpiAuthMode, dpiCreateMode, dpiDeqMode, dpiDeqNavigation, dpiEventType, dpiExecMode, dpiSessionlessTransactionId, dpiShardingKeyColumn (+20 more)
 
 ### Community 32 - "JSON & Implicit Result Tests"
-Cohesion: 0.19
-Nodes (32): main(), main(), dpiJson, dpiData_getJson(), dpiJson_getValue(), dpiStmt_getQueryValue(), dpiTestCase, dpiTestParams (+24 more)
+Cohesion: 0.15
+Nodes (42): main(), main(), dpiJson, dpiData_getJson(), dpiJson_getValue(), dpiStmt_getQueryValue(), dpiTestCase, dpiTestParams (+34 more)
 
 ### Community 33 - "Connection & Context API Docs"
 Cohesion: 0.12
 Nodes (25): dpiVectorFlags Enumeration, dpiVectorFormat Enumeration, dpiVisibility Enumeration, ODPI-C Enumerations Index, Advanced Queueing (AQ) Messaging, ODPI-C Connection Functions (dpiConn), Handle Reference-Counting Lifecycle Pattern, ODPI-C Context Functions (dpiContext) (+17 more)
 
 ### Community 34 - "Environment & Globals"
-Cohesion: 0.08
-Nodes (35): dpiDebug__getFormatWithPrefix(), dpiDebug__initialize(), dpiDebug__print(), dpiCommonCreateParams, dpiContext, dpiEncodingInfo, dpiEnv, dpiError (+27 more)
+Cohesion: 0.14
+Nodes (23): dpiCommonCreateParams, dpiContext, dpiEncodingInfo, dpiEnv, dpiError, dpiEnv__free(), dpiEnv__getBaseDate(), dpiEnv__getCharacterSetIdAndName() (+15 more)
 
 ### Community 35 - "Batch Error Tests"
 Cohesion: 0.49
 Nodes (9): dpiConn, dpiStmt, dpiTestCase, dpiTestParams, dpiTest_3200(), dpiTest_3201(), dpiTest_3202(), dpiTest__prepareInsertWithErrors() (+1 more)
 
 ### Community 36 - "OCI Library Loading"
-Cohesion: 0.25
-Nodes (16): dpiContextCreateParams, dpiVersionInfo, UNUSED, dpiOci__allocateMem(), dpiOci__calculateConfigDir(), dpiOci__checkDllArchitecture(), dpiOci__findAndCheckDllArchitecture(), dpiOci__freeMem() (+8 more)
+Cohesion: 0.11
+Nodes (31): dpiDebug__getFormatWithPrefix(), dpiDebug__initialize(), dpiDebug__print(), dpiConn, dpiError, dpiErrorInfo, dpiError__getInfo(), dpiError__initHandle() (+23 more)
 
 ### Community 37 - "JSON DOM"
-Cohesion: 0.21
-Nodes (26): dpiConn, dpiError, dpiJson, dpiJsonArray, dpiJsonNode, dpiJsonObject, dpiJznDomDoc, dpiJson_addRef() (+18 more)
+Cohesion: 0.28
+Nodes (21): dpiConn, dpiError, dpiJson, dpiJsonArray, dpiJsonNode, dpiJsonObject, dpiJznDomDoc, dpiJson_addRef() (+13 more)
 
 ### Community 38 - "SODA Database"
-Cohesion: 0.20
-Nodes (19): dpiError, dpiJsonNode, dpiSodaDb, dpiSodaDoc, dpiStringList, UNUSED, dpiSodaDb_addRef(), dpiSodaDb__checkConnected() (+11 more)
+Cohesion: 0.18
+Nodes (21): dpiError, dpiJsonNode, dpiSodaCollCursor, dpiSodaDb, dpiSodaDoc, dpiStringList, UNUSED, dpiSodaDb_addRef() (+13 more)
 
 ### Community 39 - "Object & Oracle Types"
-Cohesion: 0.13
-Nodes (26): dpiError, dpiObjectAttr, dpiObjectAttrInfo, dpiObjectType, dpiObjectAttr_addRef(), dpiObjectAttr__allocate(), dpiObjectAttr__free(), dpiObjectAttr_getInfo() (+18 more)
+Cohesion: 0.20
+Nodes (18): dpiConn, dpiError, dpiObjectType, dpiObjectType_addRef(), dpiObjectType__allocate(), dpiObjectType__check(), dpiObjectType__describe(), dpiObjectType__free() (+10 more)
 
 ### Community 40 - "SODA Document Cursor"
 Cohesion: 0.19
 Nodes (18): dpiError, dpiSodaColl, dpiSodaDoc, dpiSodaDocCursor, UNUSED, dpiSodaDocCursor_addRef(), dpiSodaDocCursor__allocate(), dpiSodaDocCursor__check() (+10 more)
 
 ### Community 41 - "Inexora.Batch Operations"
-Cohesion: 0.18
-Nodes (16): Inexora.Batch, bind_input_variables(), bind_output_variables(), create_column_variable(), create_input_variables(), create_output_variables(), encode_value(), execute_batch() (+8 more)
+Cohesion: 0.28
+Nodes (15): Inexora.Batch, bind_input_variables(), bind_output_variables(), create_column_variable(), create_input_variables(), create_output_variables(), encode_value(), execute_batch() (+7 more)
 
 ### Community 42 - "SODA Collection Cursor"
-Cohesion: 0.17
-Nodes (21): main(), dpiError, dpiSodaColl, dpiSodaCollCursor, dpiSodaDb, UNUSED, dpiSodaCollCursor_addRef(), dpiSodaCollCursor__allocate() (+13 more)
+Cohesion: 0.19
+Nodes (17): main(), dpiError, dpiSodaColl, dpiSodaCollCursor, dpiSodaDb, UNUSED, dpiSodaCollCursor_addRef(), dpiSodaCollCursor__allocate() (+9 more)
 
 ### Community 43 - "ROWID Handling"
-Cohesion: 0.24
-Nodes (24): main(), dpiRowid, dpiRowid_addRef(), dpiRowid_getStringValue(), dpiRowid_release(), dpiRowid, dpiStmt_bindValueByPos(), dpiStmt_getLastRowid() (+16 more)
+Cohesion: 0.34
+Nodes (18): dpiRowid_getStringValue(), dpiStmt_bindValueByPos(), dpiTestCase, dpiTestParams, dpiTest_4200(), dpiTest_4201(), dpiTest_4202(), dpiTest_4203() (+10 more)
 
 ### Community 44 - "Connection Params & Auth Docs"
 Cohesion: 0.14
 Nodes (18): dpiAccessToken, Token Based Authentication, dpiAppContext, dpiBytes, dpiCommonCreateParams, Database Sharding, dpiConnCreateParams, DRCP (Database Resident Connection Pooling) (+10 more)
 
 ### Community 45 - "Two-Phase Commit Transactions"
-Cohesion: 0.35
-Nodes (16): dpiConn, dpiTestCase, dpiTestParams, dpiXid, dpiTest_1700(), dpiTest_1701(), dpiTest_1702(), dpiTest_1703() (+8 more)
+Cohesion: 0.36
+Nodes (17): dpiConn_tpcBegin(), dpiConn, dpiTestCase, dpiTestParams, dpiXid, dpiTest_1700(), dpiTest_1701(), dpiTest_1702() (+9 more)
 
 ### Community 46 - "Token Auth Demos"
 Cohesion: 0.22
@@ -368,28 +364,32 @@ Cohesion: 0.33
 Nodes (13): dpiConn, dpiStmt, dpiTestCase, dpiTestParams, dpiTest_1800(), dpiTest_1801(), dpiTest_1802(), dpiTest_1803() (+5 more)
 
 ### Community 48 - "Scrollable Cursor Tests"
-Cohesion: 0.32
-Nodes (16): dpiStmt_scroll(), dpiConn, dpiStmt, dpiTestCase, dpiTestParams, dpiTest_3000(), dpiTest_3001(), dpiTest_3002() (+8 more)
+Cohesion: 0.33
+Nodes (14): dpiConn, dpiStmt, dpiTestCase, dpiTestParams, dpiTest_3000(), dpiTest_3001(), dpiTest_3002(), dpiTest_3003() (+6 more)
 
 ### Community 49 - "Inexora.Type Conversion"
 Cohesion: 0.14
 Nodes (4): Inexora.Type, convert_from_oracle(), to_elixir(), Inexora.TypeTest
 
 ### Community 50 - "Vector Creation"
-Cohesion: 0.26
-Nodes (13): dpiVector, dpiVectorInfo, dpiConn__newVector(), dpiConn, dpiError, dpiVector, dpiVectorInfo, dpiVector_addRef() (+5 more)
+Cohesion: 0.20
+Nodes (32): dpiConn, dpiDeqOptions, dpiError, dpiMessageDeliveryMode, dpiVisibility, dpiDeqOptions_addRef(), dpiDeqOptions__create(), dpiDeqOptions__free() (+24 more)
 
 ### Community 51 - "Sessionless Transactions"
-Cohesion: 0.42
-Nodes (12): dpiConn_beginSessionlessTransaction(), dpiConn_resumeSessionlessTransaction(), dpiConn__startSessionlessTransaction(), dpiTestCase, dpiTestParams, dpiTest_4500(), dpiTest_4501(), dpiTest_4502() (+4 more)
+Cohesion: 0.45
+Nodes (11): dpiConn_beginSessionlessTransaction(), dpiConn_resumeSessionlessTransaction(), dpiTestCase, dpiTestParams, dpiTest_4500(), dpiTest_4501(), dpiTest_4502(), dpiTest_4503() (+3 more)
 
 ### Community 52 - "DML Returning"
-Cohesion: 0.49
-Nodes (12): dpiVar_getReturnedData(), dpiConn, dpiTestCase, dpiTestParams, dpiTest_3300(), dpiTest_3301(), dpiTest_3302(), dpiTest_3303() (+4 more)
+Cohesion: 0.24
+Nodes (25): dpiConn, dpiError, dpiLob, dpiOracleType, dpiOracleTypeNum, dpiLob_addRef(), dpiLob__allocate(), dpiLob__check() (+17 more)
 
 ### Community 53 - "SODA Database Tests"
-Cohesion: 0.47
-Nodes (9): dpiTestCase, dpiTestParams, dpiTest_3400(), dpiTest_3401(), dpiTest_3402(), dpiTest_3403(), dpiTest_3404(), dpiTest_3405() (+1 more)
+Cohesion: 0.38
+Nodes (11): dpiSodaDb, dpiTestCase, dpiTestParams, dpiTest_3400(), dpiTest_3401(), dpiTest_3402(), dpiTest_3403(), dpiTest_3404() (+3 more)
+
+### Community 54 - "Ecto Oracle Adapter"
+Cohesion: 0.21
+Nodes (21): dpiTestCase, dpiTestParams, dpiTest_1500(), dpiTest_1501(), dpiTest_1502(), dpiTest_1503(), dpiTest_1504(), dpiTest_1505() (+13 more)
 
 ### Community 55 - "Inexora.Cursor Streaming"
 Cohesion: 0.27
@@ -400,12 +400,12 @@ Cohesion: 0.24
 Nodes (5): ParametersTable, setup(), HTMLTranslator, ListTableWithSummary, setup()
 
 ### Community 57 - "Ecto Adapter SQL Tests"
-Cohesion: 0.18
-Nodes (3): Ecto.Adapters.OracleTest, Schema, Schema2
+Cohesion: 0.46
+Nodes (12): dpiMsgProps, dpiConn_newMsgProps(), dpiMsgProps_release(), dpiTestCase, dpiTestParams, dpiTest_2600(), dpiTest_2602(), dpiTest_2603() (+4 more)
 
 ### Community 58 - "Object Attributes"
-Cohesion: 0.34
-Nodes (19): dpiConn, dpiTestCase, dpiTestParams, dpiTest_1600(), dpiTest_1601(), dpiTest_1602(), dpiTest_1603(), dpiTest_1604() (+11 more)
+Cohesion: 0.29
+Nodes (18): dpiConn, dpiTestCase, dpiTestParams, dpiTest_1600(), dpiTest_1601(), dpiTest_1602(), dpiTest_1603(), dpiTest_1604() (+10 more)
 
 ### Community 59 - "Inexora.Query & Connect"
 Cohesion: 0.25
@@ -428,8 +428,8 @@ Cohesion: 0.50
 Nodes (4): dpiMessageDeliveryMode Enumeration, dpiMessageState Enumeration, dpiSubscrNamespace Enumeration, dpiSubscrProtocol Enumeration
 
 ### Community 67 - "Ecto Integration Test"
-Cohesion: 0.50
-Nodes (3): Ecto.Adapters.OracleIntegrationTest, TestRepo, User
+Cohesion: 0.36
+Nodes (8): dpiError, dpiObjectAttr, dpiObjectAttrInfo, dpiObjectType, dpiObjectAttr_addRef(), dpiObjectAttr__allocate(), dpiObjectAttr__free(), dpiObjectAttr_getInfo()
 
 ### Community 68 - "Type Number Enum Docs"
 Cohesion: 0.67
@@ -440,39 +440,39 @@ Cohesion: 1.00
 Nodes (3): dpiSubscrCreateParams Structure, dpiSubscrGroupingClass Enumeration, dpiSubscrGroupingType Enumeration
 
 ### Community 70 - "Bind JSON Demo"
-Cohesion: 0.40
-Nodes (5): dpiConn, dpiError, UNUSED, dpiRowid__allocate(), dpiRowid__free()
+Cohesion: 0.33
+Nodes (8): dpiConn, dpiError, dpiRowid, UNUSED, dpiRowid_addRef(), dpiRowid__allocate(), dpiRowid__free(), dpiRowid_release()
 
 ### Community 71 - "CQN Demo"
-Cohesion: 0.50
-Nodes (3): Consequences, Considered Options, Split the Ecto adapter into a separate `ecto_oracle` package
+Cohesion: 0.12
+Nodes (13): [0.1.1], [0.2.0] - 2026-07-17, [0.3.0] - unreleased, Added, Changed, Changed, Changelog, Removed (+5 more)
 
 ### Community 72 - "Fetch JSON Demo"
 Cohesion: 0.50
 Nodes (3): Answer, Q: Why does dpiGen__endPublicFn() bridge 26 of the 109 communities?, Source Nodes
 
+### Community 74 - "Inexora.Error"
+Cohesion: 0.38
+Nodes (6): dpiEnv, dpiError, dpiGen__addRef(), dpiGen__allocate(), dpiGen__release(), dpiHandleTypeNum
+
 ### Community 82 - "Sharding Key Demo"
 Cohesion: 0.50
 Nodes (3): Answer, Q: How does a C-layer dpiError surface into the Elixir Inexora.Error struct, and where do OTP resources get dropped?, Source Nodes
 
-### Community 109 - "dpiData_getStmt"
-Cohesion: 0.67
-Nodes (3): dpiStmt, dpiData_getStmt(), dpiData_setStmt()
-
 ## Knowledge Gaps
-- **106 isolated node(s):** `run.sh script`, `Inexora`, `Ecto.Adapters.OracleIntegrationTest`, `TestRepo`, `User` (+101 more)
+- **106 isolated node(s):** `run.sh script`, `Inexora`, `Inexora.BatchBindingTest`, `Inexora.ConnectionTest`, `Inexora.CursorTest` (+101 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **41 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dpiGen__endPublicFn()` connect `ODPI-C Connection Core` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `Data Buffer Binds`, `LOB Handling`, `Statement & Query Tests`, `Statement Execution`, `Handle & Variable Lifecycle`, `Variable & Number Tests`, `Error & Debug Infrastructure`, `SODA Collections`, `SODA Collection Tests`, `Temp LOB Demos`, `Connection Creation & Params`, `SODA Document Tests`, `CQN Subscriptions`, `JSON & Implicit Result Tests`, `Environment & Globals`, `JSON DOM`, `SODA Database`, `Object & Oracle Types`, `SODA Document Cursor`, `SODA Collection Cursor`, `ROWID Handling`, `Scrollable Cursor Tests`, `Vector Creation`, `Sessionless Transactions`, `DML Returning`?**
-  _High betweenness centrality (0.129) - this node is a cross-community bridge._
-- **Why does `dpiTestCase_setFailedFromError()` connect `Object Attributes` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `Data Buffer Binds`, `LOB Handling`, `Statement & Query Tests`, `Variable & Number Tests`, `C Test Harness`, `Vector Type`, `SODA Collection Tests`, `Connection Property Tests`, `Temp LOB Demos`, `SODA Document Tests`, `JSON & Implicit Result Tests`, `Batch Error Tests`, `SODA Document Cursor`, `SODA Collection Cursor`, `ROWID Handling`, `Two-Phase Commit Transactions`, `Misc Data Tests`, `Scrollable Cursor Tests`, `Sessionless Transactions`, `DML Returning`, `SODA Database Tests`?**
-  _High betweenness centrality (0.084) - this node is a cross-community bridge._
-- **Why does `dpiError__set()` connect `Handle & Variable Lifecycle` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `ODPI-C Connection Core`, `LOB Handling`, `Statement Execution`, `Data & JSON Buffers`, `Error & Debug Infrastructure`, `SODA Collections`, `Temp LOB Demos`, `Connection Creation & Params`, `SODA Document Tests`, `CQN Subscriptions`, `JSON & Implicit Result Tests`, `Environment & Globals`, `OCI Library Loading`, `JSON DOM`, `SODA Database`, `Object & Oracle Types`, `SODA Document Cursor`, `SODA Collection Cursor`, `Scrollable Cursor Tests`, `Vector Creation`?**
-  _High betweenness centrality (0.048) - this node is a cross-community bridge._
+- **Why does `dpiGen__endPublicFn()` connect `ODPI-C Connection Core` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `Data Buffer Binds`, `Ecto SQL Generation`, `LOB Handling`, `Statement & Query Tests`, `Statement Execution`, `Handle & Variable Lifecycle`, `Variable & Number Tests`, `Vector Type`, `Error & Debug Infrastructure`, `SODA Collections`, `SODA Collection Tests`, `Temp LOB Demos`, `Connection Creation & Params`, `SODA Document Tests`, `CQN Subscriptions`, `JSON & Implicit Result Tests`, `OCI Library Loading`, `JSON DOM`, `SODA Database`, `SODA Document Cursor`, `SODA Collection Cursor`, `ROWID Handling`, `Two-Phase Commit Transactions`, `Vector Creation`, `Sessionless Transactions`, `DML Returning`, `Ecto Adapter SQL Tests`, `Ecto Integration Test`, `Inexora.Error`?**
+  _High betweenness centrality (0.141) - this node is a cross-community bridge._
+- **Why does `dpiTestCase_setFailedFromError()` connect `LOB Handling` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `Data Buffer Binds`, `Ecto SQL Generation`, `Statement & Query Tests`, `Variable & Number Tests`, `C Test Harness`, `Vector Type`, `SODA Collection Tests`, `Connection Property Tests`, `Temp LOB Demos`, `SODA Document Tests`, `JSON & Implicit Result Tests`, `Batch Error Tests`, `SODA Document Cursor`, `SODA Collection Cursor`, `ROWID Handling`, `Two-Phase Commit Transactions`, `Misc Data Tests`, `Scrollable Cursor Tests`, `Vector Creation`, `Sessionless Transactions`, `DML Returning`, `SODA Database Tests`, `Ecto Oracle Adapter`, `Ecto Adapter SQL Tests`, `Object Attributes`?**
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
+- **Why does `dpiError__set()` connect `Handle & Variable Lifecycle` to `Object Type & AQ Samples`, `AQ Queues & Message Props`, `Connection Pooling`, `Inexora NIF Core`, `ODPI-C Connection Core`, `LOB Handling`, `Statement Execution`, `Data & JSON Buffers`, `OCI AQ Bindings`, `Vector Type`, `Error & Debug Infrastructure`, `SODA Collections`, `Temp LOB Demos`, `Connection Creation & Params`, `SODA Document Tests`, `CQN Subscriptions`, `JSON & Implicit Result Tests`, `Environment & Globals`, `OCI Library Loading`, `JSON DOM`, `SODA Database`, `Object & Oracle Types`, `SODA Document Cursor`, `SODA Collection Cursor`, `DML Returning`?**
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
 - **Are the 413 inferred relationships involving `dpiTestCase_setFailedFromError()` (e.g. with `dpiTest_1100()` and `dpiTest_1101()`) actually correct?**
   _`dpiTestCase_setFailedFromError()` has 413 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 332 inferred relationships involving `dpiTestCase_getConnection()` (e.g. with `dpiTest_1100()` and `dpiTest_1101()`) actually correct?**
