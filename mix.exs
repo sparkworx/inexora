@@ -76,7 +76,11 @@ defmodule Inexora.MixProject do
       links: %{
         "GitHub" => @source_url
       },
-      files: ~w(lib c_src priv .formatter.exs mix.exs README.md CHANGELOG.md LICENSE Makefile)
+      # `priv` is intentionally omitted: the NIF is built from source on the
+      # installer's machine via elixir_make (the Makefile's `all` target creates
+      # priv/), so shipping a locally-compiled, platform-specific .so is both
+      # unnecessary and wrong for other platforms.
+      files: ~w(lib c_src .formatter.exs mix.exs README.md CHANGELOG.md LICENSE Makefile)
     ]
   end
 end
